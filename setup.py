@@ -75,9 +75,9 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['pika=0.10.0',
-                      'cassandra-driver=3.7.1',
-                      'requests=2.12.4'],
+    install_requires=['pika>=0.10.0',
+                      'cassandra-driver>=3.7.1',
+                      'requests>=2.12.4'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
