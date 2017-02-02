@@ -1,25 +1,27 @@
 #!/usr/bin/env python
 import pika
-from util import get_cfg
+import ast
 
 
 class Sending(object):
-    def __init__(self, config=None):
-        _config = config if config else get_cfg()['lcmap']
-        _connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=_config['rabbitmqhost'],
-                                      port=_config['rabbitmqport']))
-        self.channel = _connection.channel()
-        self.changequeue = _config['rabbitmqchangequeue']
-        self.routingkey = 'change-worker'
+    def __init__(self, sysargs):
+        print "sysargs: {}".format(sysargs)
+        print "type sysargs: {}".format(type(sysargs))
+        self.host = sysargs['rabbitmqhost']
+        self.port = sysargs['rabbitmqport']
+        self.ssl = sysargs['rabbitmqssl']
+        self.queue = sysargs['rabbitmqchangequeue']
 
-    def send(self, message, queue=None):
-        _queue = queue if queue else self.changequeue
-        self.channel.queue_declare(queue=_queue)
-        self.channel.basic_publish(exchange='',
-                                   routing_key=self.routingkey,
-                                   body=message)
-        self.connection.close()
+    def send(self, message):
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host,
+                                                                       port=self.port,
+                                                                       ssl=self.ssl))
+        channel = connection.channel()
+        channel.queue_declare(queue=self.queue)
+        channel.basic_publish(exchange='',
+                              routing_key=self.queue,
+                              body=message)
+        connection.close()
 
 
 

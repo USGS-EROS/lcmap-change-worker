@@ -9,5 +9,10 @@ def main():
     message_receiver(sys.argv[1])
 
 
+def run(args):
+    message_receiver(args)
+
+
+
 if __name__ == "__main__":
     main()
