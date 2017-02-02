@@ -76,7 +76,6 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['pika>=0.10.0',
-                      'cassandra-driver>=3.7.1',
                       'requests>=2.12.4'],
 
     # List additional groups of dependencies here (e.g. development
