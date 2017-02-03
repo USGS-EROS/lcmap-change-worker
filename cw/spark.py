@@ -1,21 +1,19 @@
 #!/usr/bin/env python
+import ast
+import base64
+import ccd
+import hashlib
 import os
+import numpy as np
 import sys
 import requests
 from glob import glob
 from datetime import datetime
-import base64
-import numpy as np
 from util import ubid_band_dict
-import ast
-import hashlib
-from messaging.sending import Sending
-
-import ccd
+from cw.sending import Sending
 
 class SparkException(Exception):
     pass
-
 
 class Spark(object):
     def __init__(self, config):
@@ -134,7 +132,7 @@ class Spark(object):
                 outgoing['x'], outgoing['y'] = self.pixel_xy(pixel_index, input_d['tile_x'], input_d['tile_y'])
                 outgoing['algorithm'] = input_d['algorithm']
                 outgoing['result_md5'] = hashlib.md5("{}".format(results)).hexdigest()
-                outgoing['result_status'] = 'ok'
+                outgoing['result_ok'] = True
                 outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
                 outgoing['inputs_md5'] = hashlib.md5("{}".format(resp.json())).hexdigest()
 
@@ -146,4 +144,3 @@ class Spark(object):
 def run(config, indata):
     sprk = Spark(config)
     return sprk.run(indata)
-

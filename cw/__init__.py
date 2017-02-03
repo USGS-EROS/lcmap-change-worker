@@ -1,4 +1,18 @@
-#!/usr/bin/env python
+import receiving
+import sending
+import spark
+#from messaging.sending import Sending
+
+def message_receiver(sysargs):
+    receiver = receiving.Receiving(sysargs)
+    receiver.start_consuming()
+
+def launch_task(config, msg_body):
+    # config is a dictionary
+    # msg_body needs to be a url
+    return spark.run(config, msg_body)
+    #sender = Sending(config)
+    #sender.send(msg_body)
 
 ubid_band_dict = {
     'tm': {'red': 'band3',

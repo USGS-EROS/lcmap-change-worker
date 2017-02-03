@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import pika
 import ast
+import cw
+import pika
 
-from tasking import launch_task
 # >>> params = pika.ConnectionParameters(host='lcsrlpnd01', port=5671, ssl=True)
 # >>> connect = pika.BlockingConnection(params)
-
 
 class Receiving(object):
     def __init__(self, sysargs):
@@ -17,7 +16,7 @@ class Receiving(object):
         self.changequeue = self._config['rabbitmqlistenqueue']
 
     def callback_handler(self, ch, method, properties, body):
-        launch_task(self._config, body)
+        cw.launch_task(self._config, body)
 
     def start_consuming(self):
         self.channel.queue_declare(queue=self.changequeue)

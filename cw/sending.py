@@ -22,7 +22,3 @@ class Sending(object):
                               routing_key=self.queue,
                               body=message)
         connection.close()
-
-
-
-
