@@ -14,7 +14,7 @@ worker for initiating change detection jobs, and sending results to the data sto
 ## Configuration
 
 ## Developing & Testing
-
+Get the local environment ready for development and testing.
 ```bash
    $ git clone git@github.com:usgs-eros/lcmap-change-worker
    $ cd lcmap-change-worker
@@ -26,4 +26,12 @@ worker for initiating change detection jobs, and sending results to the data sto
    $ pip install -r pyccd-requirement.txt
 ```
 
+Run tests:
+```bash
+   # the right way
+   $ python setup.py test
+
+   # alternatively
+   $ pytest
+```
 ## Deploying
