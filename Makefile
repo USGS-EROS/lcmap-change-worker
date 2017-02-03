@@ -17,3 +17,8 @@ docker-deps-up-nodaemon:
 
 docker-deps-down:
 	docker-compose -f resources/docker-compose.yml down
+
+pypi:
+
+dockerhub:
+	
