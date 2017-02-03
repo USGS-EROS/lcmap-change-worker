@@ -1,10 +1,9 @@
-import receiving
-import sending
+import messaging
 import spark
 #from messaging.sending import Sending
 
 def message_receiver(sysargs):
-    receiver = receiving.Receiving(sysargs)
+    receiver = messaging.Receiving(sysargs)
     receiver.start_consuming()
 
 def launch_task(config, msg_body):

@@ -9,7 +9,7 @@ import sys
 import requests
 from glob import glob
 from datetime import datetime
-from util import ubid_band_dict
+from cw import ubid_band_dict
 from cw.sending import Sending
 
 class SparkException(Exception):
@@ -139,7 +139,6 @@ class Spark(object):
                 self.sender.send("{}".format(outgoing))
 
         return True
-
 
 def run(config, indata):
     sprk = Spark(config)

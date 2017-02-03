@@ -22,7 +22,6 @@ class Receiving(object):
         self.channel.basic_consume(self.callback_handler, queue=self.changequeue, no_ack=True)
         self.channel.start_consuming()
 
-
 class Sending(object):
     def __init__(self, sysargs):
         print "sysargs: {}".format(sysargs)
@@ -31,6 +30,8 @@ class Sending(object):
         self.port = sysargs['rabbitmqport']
         self.ssl = sysargs['rabbitmqssl']
         self.queue = sysargs['rabbitmqchangequeue']
+        self.routing_key = 'change-detection'
+        self.exchange = sysargs['rabbitmqexchange']
 
     def send(self, message):
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host,
@@ -38,7 +39,10 @@ class Sending(object):
                                                                        ssl=self.ssl))
         channel = connection.channel()
         channel.queue_declare(queue=self.queue)
-        channel.basic_publish(exchange='',
-                              routing_key=self.queue,
-                              body=message)
+        channel.basic_publish(exchange=self.exchange,
+                              routing_key=self.routing_key,
+                              body=message,
+                              properties=pika.BasicProperties(
+                                  delivery_mode = 2, # make message persistent
+                              ))
         connection.close()
