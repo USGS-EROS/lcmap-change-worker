@@ -1,0 +1,2 @@
+
+-e git+https://github.com/USGS-EROS/lcmap-pyccd.git@542d0c8b4171589df7fce6127f109d71e9d1428b#egg=pyccd

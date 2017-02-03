@@ -1,5 +1,5 @@
-import messaging
-import spark
+from . import messaging
+from . import spark
 #from messaging.sending import Sending
 
 def message_receiver(sysargs):

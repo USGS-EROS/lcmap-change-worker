@@ -7,10 +7,10 @@ import os
 import numpy as np
 import sys
 import requests
+import cw
 from glob import glob
 from datetime import datetime
-from cw import ubid_band_dict
-from cw.sending import Sending
+from cw.messaging import Sending
 
 class SparkException(Exception):
     pass
@@ -50,7 +50,7 @@ class Spark(object):
             _sorted = vars()[bucket+'_sorted'] = self.sort_band_data(vars()[bucket+'_clean'], 'acquired')
             vars()[bucket+'_bytes'] = [self.b64_to_bytearray(item['data']) for item in _sorted]
         dates = [self.dtstr_to_ordinal(i['acquired']) for i in vars()['band2_sorted']]
-        mapping = ubid_band_dict[band_group]
+        mapping = cw.ubid_band_dict[band_group]
         for band in "red green blue nirs swirs1 swirs2 thermals qas".split(" "):
             vars()[band+'_array'] = np.array(vars()[mapping[band] + '_bytes'])
             print("{}: len {}".format(band, len(vars()[band+'_array'])))
@@ -72,10 +72,10 @@ class Spark(object):
                               'thermals': vars()['thermals_array'][0:rows, lower:upper],
                               'qas': vars()['qas_array'][0:rows, lower:upper]}
                 output.append(_od)
-        except IndexError, e:
+        except IndexError as e:
             output = "IndexError for returned data: {}".format(e.message)
 
-        print "returning output from collect_output..."
+        print("returning output from collect_output...")
         return output
 
     def run_pyccd(self, datad):

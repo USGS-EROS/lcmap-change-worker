@@ -24,8 +24,8 @@ class Receiving(object):
 
 class Sending(object):
     def __init__(self, sysargs):
-        print "sysargs: {}".format(sysargs)
-        print "type sysargs: {}".format(type(sysargs))
+        print("sysargs: {}".format(sysargs))
+        print("type sysargs: {}".format(type(sysargs)))
         self.host = sysargs['rabbitmqhost']
         self.port = sysargs['rabbitmqport']
         self.ssl = sysargs['rabbitmqssl']
