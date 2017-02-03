@@ -7,7 +7,8 @@ from datetime import datetime
 import base64
 import numpy as np
 from util import ubid_band_dict
-
+import ast
+import hashlib
 from messaging.sending import Sending
 
 import ccd
@@ -54,6 +55,7 @@ class Spark(object):
         mapping = ubid_band_dict[band_group]
         for band in "red green blue nirs swirs1 swirs2 thermals qas".split(" "):
             vars()[band+'_array'] = np.array(vars()[mapping[band] + '_bytes'])
+            print("{}: len {}".format(band, len(vars()[band+'_array'])))
         rows = len(dates)  #282
         cells = 10000      # per tile, 100x100
         output = []
@@ -81,12 +83,6 @@ class Spark(object):
     def run_pyccd(self, datad):
         def np_to_list(_d):
             _x = [i[0] for i in _d]
-            # try:
-            #   _x = [i[0] for i in _d]
-            # except IndexError:
-            #   _x = []
-            #   for i in range(0, 282):
-            #     _x.append(0)
             return np.array(_x)
 
         data = datad.values()[0]
@@ -94,38 +90,60 @@ class Spark(object):
         results = ccd.detect(data['dates'], np_to_list(data['blue']), np_to_list(data['green']), np_to_list(data['red']), np_to_list(data['nirs']), np_to_list(data['swirs1']), np_to_list(data['swirs2']), np_to_list(data['thermals']), np_to_list(data['qas']))
         return results
 
-    def run(self, url):
-        if 'http://lcmap' not in url:
-            raise SparkException('invalid url: {}'.format(url))
-            # url = "http://lcmap-test.cr.usgs.gov/landsat/tiles?x=-2013585&y=3095805&acquired=1982-01-01/2017-01-01&ubid="
-        data = list()
-        for i in self.ubids_list:
-            print "attempting query of: {}".format(url+i)
-            resp = requests.get(url+i)
-            if resp.status_code != 200:
-                print "got a non-200: {}\ntrying again...".format(resp.status_code)
-                resp = requests.get(url+i)
-            print "len of resp.json() {}".format(len(resp.json()))
-            for d in resp.json():
-                data.append(d)
+    def pixel_xy(self, index, tilex, tiley, dim=100):
+        # if index is 565, tilex is 123, tiley is 330, xdim is 100, ydim is 100
+        row = index / dim
+        col = index - row * dim
+        return {'y': tiley+row, 'x': tilex+col}
 
-        #band_group = 'oli' if 'OLI_TIRS' in url else 'tm'
-        band_group = 'oli' if 'OLI_TIRS' in url else 'tm'
+    def run(self, indata):
+        input_d = ast.literal_eval(indata)
+        # url = "http://lcmap-test.cr.usgs.gov/landsat/tiles?x=-2013585&y=3095805&acquired=1982-01-01/2017-01-01&ubid="
 
-        #output = collect_data(band_group, tile_resp.json())
-        output = self.collect_data(band_group, data)
+        resp = requests.get(input_d['inputs_url'])
+        if resp.status_code != 200:
+            resp = requests.get(input_d['inputs_url'])
+
+        # data = list()
+        # for i in self.ubids_list:
+        #     print "attempting query of: {}".format(url+i)
+        #     resp = requests.get(url+i)
+        #     if resp.status_code != 200:
+        #         print "got a non-200: {}\ntrying again...".format(resp.status_code)
+        #         resp = requests.get(url+i)
+        #     print "len of resp.json() {}".format(len(resp.json()))
+        #     for d in resp.json():
+        #         data.append(d)
+
+        # band_group = 'oli' if 'OLI_TIRS' in url else 'tm'
+        band_group = 'oli' if 'OLI_TIRS' in input_d['inputs_url'] else 'tm'
+
+        # output = collect_data(band_group, tile_resp.json())
+        output = self.collect_data(band_group, resp.json())
 
         # HACK
         if isinstance(output, str):
             self.sender.send(output)
         else:
-            results = self.run_pyccd(output)
-            self.sender.send(results)
+            for item in output:
+                # item is a dict, keyed by pixel index {0: {dates: , green: , yada...}
+                pixel_index = item.keys()[0]
+
+                results = self.run_pyccd(item)
+                outgoing = dict()
+                outgoing['x'], outgoing['y'] = self.pixel_xy(pixel_index, input_d['tile_x'], input_d['tile_y'])
+                outgoing['algorithm'] = input_d['algorithm']
+                outgoing['result_md5'] = hashlib.md5("{}".format(results)).hexdigest()
+                outgoing['result_status'] = 'ok'
+                outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+                outgoing['inputs_md5'] = hashlib.md5("{}".format(resp.json())).hexdigest()
+
+                self.sender.send("{}".format(outgoing))
 
         return True
 
 
-def run(config, url):
+def run(config, indata):
     sprk = Spark(config)
-    return sprk.run(url)
+    return sprk.run(indata)
 
