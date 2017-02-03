@@ -1,5 +1,7 @@
 CONTAINERS=`docker ps -a -q`
 IMAGES=`docker images -q`
+
+# pull the tag from version.py
 TAG=0.1.0
 WORKERIMAGE=lcmap-change-worker:$(TAG)
 
@@ -18,7 +20,6 @@ docker-deps-up-nodaemon:
 docker-deps-down:
 	docker-compose -f resources/docker-compose.yml down
 
-pypi:
+deploy-pypi:
 
-dockerhub:
-	
+deploy-dockerhub:
