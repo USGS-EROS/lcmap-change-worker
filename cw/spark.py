@@ -10,7 +10,6 @@ import requests
 import cw
 from glob import glob
 from datetime import datetime
-from cw.messaging import Sending
 
 class SparkException(Exception):
     pass
@@ -20,7 +19,6 @@ class Spark(object):
         self.config = config
         ubids = 'LANDSAT_7/ETM/sr_band1&ubid=LANDSAT_7/ETM/sr_band2&ubid=LANDSAT_7/ETM/sr_band4&ubid=LANDSAT_7/ETM/sr_band5&ubid=LANDSAT_7/ETM/sr_band7&ubid=LANDSAT_7/ETM/cfmask&ubid=LANDSAT_7/ETM/sr_band3&ubid=LANDSAT_7/ETM/toa_band6'
         self.ubids_list = ubids.split('&ubid=')
-        self.sender = Sending(config)
 
     def sort_band_data(self, band, field):
         return sorted(band, key=lambda x: x[field])
@@ -119,9 +117,16 @@ class Spark(object):
         # output = collect_data(band_group, tile_resp.json())
         output = self.collect_data(band_group, resp.json())
 
+        # This block should be turned into a value that is returned
+        # from the call to run().  Sending/Receiving is a different
+        # responsibility than executing the tasks.
         # HACK
         if isinstance(output, str):
-            self.sender.send(output)
+            # gather other needed info, set result_ok to False, set result to
+            # output.  without x, y, algorithm then result cannot be saved
+            # by lcmap-changes
+            return output
+            #self.sender.send(output)
         else:
             for item in output:
                 # item is a dict, keyed by pixel index {0: {dates: , green: , yada...}
@@ -135,10 +140,7 @@ class Spark(object):
                 outgoing['result_ok'] = True
                 outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
                 outgoing['inputs_md5'] = hashlib.md5("{}".format(resp.json())).hexdigest()
-
-                self.sender.send("{}".format(outgoing))
-
-        return True
+                return outgoing
 
 def run(config, indata):
     sprk = Spark(config)

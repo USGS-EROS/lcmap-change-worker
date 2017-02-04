@@ -1,10 +1,9 @@
 import logging
+import json
 import os
 import sys
 from . import messaging
 from . import spark
-
-#from messaging.sending import Sending
 
 #__format = '%(asctime)s %(module)s::%(funcName)-20s - %(message)s'
 #logging.basicConfig(stream=sys.stdout,
@@ -37,13 +36,26 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
                       'thermals': 'band10',
                       'qas': 'cfmask'}}}
 
-def start_listener(cfg):
-    receiver = messaging.Receiving(cfg)
-    receiver.start_consuming()
+
+def send(cfg, message):
+    return messaging.send(cfg, message)
+
+def listen(cfg, callback):
+    messaging.listen(cfg, callback)
 
 def launch_task(cfg, msg_body):
-    # config is a dictionary
     # msg_body needs to be a url
     return spark.run(cfg, msg_body)
-    #sender = Sending(config)
-    #sender.send(msg_body)
+
+def callback_handler(cfg, ch, method, properties, body):
+    try:
+        result = launch_task(cfg, body)
+        if type(result) is dict:
+            print("Successful result:{}".format(result))
+            # indicates successful result
+            send(cfg, json.dumps(result))
+        else:
+            # not successful, do something with this error.
+            print("Error during production:{}".format(result))
+    except Exception as e:
+        print("Exception receiving message: {}".format(e))

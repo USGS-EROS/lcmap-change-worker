@@ -27,7 +27,7 @@ setup(
     # __version__ is defined in version.py
     version=__version__,
 
-    description='Module for executing change detection requests and storing results',
+    description='Module for executing change detection and sending results',
     long_description=long_description,
 
     # The project's main homepage.
@@ -79,7 +79,7 @@ setup(
     install_requires=['pika>=0.10.0',
                       'requests>=2.12.4',
                       'lcmap-pyccd==1.0.3b1'
-],
+    ],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -116,7 +116,8 @@ setup(
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
     # entry_points={'console_scripts': ['pyccd-detect=ccd.cli:detect', ], },
-    entry_points = {'console_scripts': ['change-worker=cw.__main__:main']}
+    entry_points = {'console_scripts': ['lcw-listen=cw.__listener__:main',
+                                        'lcw-test-send=cw.__sender__:main']}
     ##entry_points='''
     ##    [core_package.cli_plugins]
     ##    sample=ccd.cli:sample

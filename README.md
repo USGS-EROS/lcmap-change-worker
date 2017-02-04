@@ -9,18 +9,17 @@ worker for initiating change detection jobs, and sending results to the data sto
 
 ## Usage
 ```bash
-    # change-worker is available following install with pip
-    $ change-worker
+    # lcw-listener is available following install with pip
+    $ lcw-listen
 
-    # this runs the same script.  
-    # Useful to save the pip install -e. step while working on cw.__main__
-    python3 -m cw.__main__
+    # lcw-test-sender will send stdin to the configured response exchange
+    $ lcw-test-send
 ```
 
 ```python
-# same effect as change-worker
-from cw import __main__
-__main__.main()
+# same effect as lcw-listen
+from cw import __listener__
+__listener__.main()
 ```
 
 ## Configuration
