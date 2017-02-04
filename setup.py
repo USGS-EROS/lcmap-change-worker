@@ -27,7 +27,7 @@ setup(
     # __version__ is defined in version.py
     version=__version__,
 
-    description='Module for executing change detection requests and storing results',
+    description='Module for executing change detection and sending results',
     long_description=long_description,
 
     # The project's main homepage.
@@ -55,8 +55,9 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5'
     ],
 
     # What does your project relate to?
@@ -65,7 +66,7 @@ setup(
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
     # packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    packages=['change_worker'],
+    packages=['cw'],
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
@@ -76,7 +77,9 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['pika>=0.10.0',
-                      'requests>=2.12.4'],
+                      'requests>=2.12.4',
+                      'lcmap-pyccd==1.0.3b1'
+    ],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -96,8 +99,6 @@ setup(
     setup_requires=['pytest-runner', 'pip'],
     tests_require=[],
 
-    scripts=['scripts/run_lcmap_change_worker.py'],
-
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
@@ -115,6 +116,8 @@ setup(
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
     # entry_points={'console_scripts': ['pyccd-detect=ccd.cli:detect', ], },
+    entry_points = {'console_scripts': ['lcw-listen=cw.__listener__:main',
+                                        'lcw-test-send=cw.__sender__:main']}
     ##entry_points='''
     ##    [core_package.cli_plugins]
     ##    sample=ccd.cli:sample

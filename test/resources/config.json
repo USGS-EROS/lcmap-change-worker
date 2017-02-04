@@ -1,0 +1,6 @@
+{"rabbit-host": "localhost",
+ "rabbit-port": 5672,
+ "rabbit-queue": "unit.lcmap.changes.worker",
+ "rabbit-exchange": "unit.lcmap.changes.worker",
+ "rabbit-binding": "unit.",
+ "rabbit-ssl": false}
