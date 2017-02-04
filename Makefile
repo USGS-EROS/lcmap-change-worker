@@ -28,4 +28,6 @@ clean-venv:
 	@rm -rf .venv
 
 clean:
-	@rm -rf dist build lcmap_change_worker.egg-info __pycache__ *.pyc
+	@rm -rf dist build lcmap_change_worker.egg-info
+	@find . -name '*.pyc' -delete
+	@find . -name '__pycache__' -delete

@@ -99,8 +99,6 @@ setup(
     setup_requires=['pytest-runner', 'pip'],
     tests_require=[],
 
-    scripts=['scripts/run_lcmap_change_worker.py'],
-
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
@@ -118,6 +116,7 @@ setup(
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
     # entry_points={'console_scripts': ['pyccd-detect=ccd.cli:detect', ], },
+    entry_points = {'console_scripts': ['change-worker=cw.__main__:main']}
     ##entry_points='''
     ##    [core_package.cli_plugins]
     ##    sample=ccd.cli:sample

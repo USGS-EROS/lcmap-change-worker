@@ -1,14 +1,24 @@
+import logging
 import os
+import sys
 from . import messaging
 from . import spark
+
 #from messaging.sending import Sending
 
-config = {'rabbit-host': os.getenv('lcw-rabbit-host', 'localhost'),
-          'rabbit-port': os.getenv('lcw-rabbit-port', 5672),
-          'rabbit-queue': os.getenv('lcw-rabbit-queue', 'unit.lcmap.changes.worker'),
-          'rabbit-exchange': os.getenv('lcw-rabbit-exchange', 'unit.lcmap.changes.worker'),
-          'rabbit-binding': os.getenv('lcw-rabbit-binding', 'unit.b'),
-          'rabbit-ssl': False,
+#__format = '%(asctime)s %(module)s::%(funcName)-20s - %(message)s'
+#logging.basicConfig(stream=sys.stdout,
+#                    level=logging.DEBUG,
+#                    format=__format,
+#                    datefmt='%Y-%m-%d %H:%M:%S')
+#logger = logging.getLogger('lcw')
+
+config = {'rabbit-host': os.getenv('lcw_rabbit_host', 'localhost'),
+          'rabbit-port': os.getenv('lcw_rabbit_port', 5672),
+          'rabbit-queue': os.getenv('lcw_rabbit_queue', 'local.lcmap.changes.worker'),
+          'rabbit-exchange': os.getenv('lcw_rabbit_exchange', 'local.lcmap.changes.worker'),
+          'rabbit-result-routing-key': os.getenv('lcw_rabbit_result_routing_key', 'change-detection-result'),
+          'rabbit-ssl': os.getenv('lcw_rabbit_ssl', False),
           'ubid_band_dict' : {
               'tm': {'red': 'band3',
                      'blue': 'band1',
@@ -27,7 +37,7 @@ config = {'rabbit-host': os.getenv('lcw-rabbit-host', 'localhost'),
                       'thermals': 'band10',
                       'qas': 'cfmask'}}}
 
-def message_receiver(cfg):
+def start_listener(cfg):
     receiver = messaging.Receiving(cfg)
     receiver.start_consuming()
 

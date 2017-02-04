@@ -6,45 +6,38 @@ import pika
 
 def connection (config):
     return pika.BlockingConnection(
-        pika.ConnectionParameters(host=config['rabbitmqhost'],
-                                  port=config['rabbitmqport'],
-                                  ssl=config['rabbitmqssl']))
+        pika.ConnectionParameters(host=config['rabbit-host'],
+                                  port=config['rabbit-port'],
+                                  ssl=config['rabbit-ssl']))
 
 class Receiving(object):
-    def __init__(self, config):
-        self.config = config
-        _connection = connection(config)
+    def __init__(self, cfg):
+        self.cfg = cfg
+        _connection = connection(cfg)
         self.channel = _connection.channel()
-        self.changequeue = config['rabbitmqlistenqueue']
 
     def callback_handler(self, ch, method, properties, body):
-        cw.launch_task(self.config, body)
+        cw.launch_task(self.cfg, body)
 
     def start_consuming(self):
-        self.channel.queue_declare(queue=self.changequeue)
+        #self.channel.queue_declare(queue=self.queue)
         self.channel.basic_consume(self.callback_handler,
-                                   queue=self.changequeue,
-                                   no_ack=True)
+                                   queue=self.cfg['rabbit-queue'],
+                                   no_ack=True) #This needs to be manual ack'ing, research and make sure otherwise we'll get multiiple deliveries.
         self.channel.start_consuming()
 
 class Sending(object):
-    def __init__(self, config):
-        print("config: {}".format(config))
-        print("type config: {}".format(type(config)))
-        self.config
-        self.host = config['rabbitmqhost']
-        self.port = config['rabbitmqport']
-        self.ssl = config['rabbitmqssl']
-        self.queue = config['rabbitmqchangequeue']
-        self.routing_key = 'change-detection'
-        self.exchange = config['rabbitmqexchange']
+    def __init__(self, cfg):
+        print("config: {}".format(cfg))
+        print("type config: {}".format(type(cfg)))
+        self.cfg = cfg
 
     def send(self, message):
-        connection = connection(self.config)
+        connection = connection(self.cfg)
         channel = connection.channel()
-        channel.queue_declare(queue=self.queue)
-        channel.basic_publish(exchange=self.exchange,
-                              routing_key=self.routing_key,
+        # channel.queue_declare(queue=self.queue)
+        channel.basic_publish(exchange=self.cfg['rabbit-exchange'],
+                              routing_key=self.cfg['rabbit-result-routing-key'],
                               body=message,
                               properties=pika.BasicProperties(
                                   delivery_mode = 2, # make message persistent
