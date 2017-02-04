@@ -1,19 +1,25 @@
-FROM ubuntu:17.04
+FROM jmorton/inferno:latest
+MAINTAINER USGS LCMAP http://eros.usgs.gov
 
-RUN apt-get -y update && apt-get install -y git python-pip openjdk-8-jdk tar wget
+ENV version 0.1.0
 
-# MESOS dependencies
-RUN apt-get install -y build-essential python-dev libcurl4-nss-dev libsasl2-dev libsasl2-modules maven libapr1-dev libsvn-dev zlib1g-dev
+ENV LCW_RABBIT_HOST rabbitmq
+ENV LCW_RABBIT_PORT 5672
+ENV LCW_RABBIT_QUEUE local.lcmap.changes.worker
+ENV LCW_RABBIT_EXCHANGE	local.lcmap.changes.worker
+ENV LCW_RABBIT_SSL False
+ENV LCW_RABBIT_RESULT_ROUTING_KEY change-detection-result
 
-RUN pip install -e git+https://github.com/USGS-EROS/lcmap-change-worker.git@develop\#egg=changeworkerdevelop
+RUN mkdir /app
+WORKDIR /app
+COPY cw /app/cw
+COPY pytest.ini /app
+COPY README.md /app
+COPY resources /app/resources
+COPY setup.cfg /app
+COPY setup.py /app
+COPY version.py /app
+RUN pip2 install --upgrade pip
+RUN pip2 install -e.
 
-RUN mkdir -p /opt/spark; cd /opt/spark/; wget http://d3kbcqa49mib13.cloudfront.net/spark-2.0.2-bin-hadoop2.7.tgz; tar -xf spark-2.0.2-bin-hadoop2.7.tgz;
-
-# Retrieve pre-compiled Mesos shared libarary
-RUN cd /usr/local/lib; wget https://edclpdsftp.cr.usgs.gov/downloads/lcmap/shared_libraries/libmesos-1.1.0.so; ln -s /usr/local/lib/libmesos-1.1.0.so /usr/lib/libmesos.so
-RUN ln -s /usr/local/lib/libmesos-1.1.0.so /usr/lib/libmesos.so
-ENV MESOS_NATIVE_JAVA_LIBRARY=/usr/lib/libmesos.so
-
-ENV SPARK_HOME=/opt/spark/spark-2.0.2-bin-hadoop2.7
-ENV WORKDIR=/opt/spark/spark-2.0.2-bin-hadoop2.7
-WORKDIR /opt/spark/spark-2.0.2-bin-hadoop2.7
+ENTRYPOINT ["lcw-listen"]
