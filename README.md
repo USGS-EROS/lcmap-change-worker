@@ -1,13 +1,28 @@
 # lcmap-change-worker
 worker for initiating change detection jobs, and sending results to the data store
 
-## Usage
-
 ## Install
 ```bash
   # locally
   $ pip install -e.
 ```
+
+## Usage
+```bash
+    # change-worker is available following install with pip
+    $ change-worker
+
+    # this runs the same script.  
+    # Useful to save the pip install -e. step while working on cw.__main__
+    python3 -m cw.__main__
+```
+
+```python
+# same effect as change-worker
+from cw import __main__
+__main__.main()
+```
+
 ## Configuration
 
 ## Developing & Testing
