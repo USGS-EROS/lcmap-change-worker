@@ -3,6 +3,9 @@ python:
   - "3.4"
   - "3.5"
 
+services:
+  - docker
+  
 before_install:
   - make docker-deps-up
 
