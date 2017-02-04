@@ -20,7 +20,7 @@ install:
   - "pip install -e ."
 
 after_success:
-  - deploy
+  - /bin/bash deploy
   - make docker-deps-down
 
 # command to run tests
