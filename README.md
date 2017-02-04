@@ -12,7 +12,7 @@ worker for initiating change detection jobs, and sending results to the data sto
   # lcw-listen is available following install with pip
   $ lcw-listen
 
-  # lcw-test-send will send stdin to the configured response exchange
+  # lcw-test-send will send stdin to the LCW_RABBIT_EXCHANGE	
   $ lcw-test-send '{"some":"message"}'
 ```
 
