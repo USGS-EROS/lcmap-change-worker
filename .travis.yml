@@ -1,31 +1,24 @@
 language: python
 python:
-  - "3.4"
-  - "3.5"
-
+- '3.4'
+- '3.5'
 services:
-  - docker
-
+- docker
 env:
   global:
-    - COMMIT=${TRAVIS_COMMIT::8}
-    - secure: NPsAWN17osX6UiNsKm4eeiQ9feU98stNJ1qKKzJaYqq5IHITeYZtrZSOFay7QYv0Xyp/BCsYuofPX6Ht0be27JN5fYCcmiScQOu7NUhjKN7ctFxg+oJVGLiLNnUHnkHKD2WSouSny0cLYlAI3o5Np4RUQ3g8dEQFIrjrbLQCXrJwhr7/iPAk/joDsixHsYReR1e2w387/rVFz/SG0Khm6KCVxYniPygA7wBkASqfoMJorViLITDg4Jon0PsM9SxvAsMiHoNPCDILfIYW0G2M9/pU8SxVbXtSOerDpUaC+DEozrmPQvkSKFbShG6lenTno5lMB6UHSycNC3khxRcP3DZ7DI0L4bH7ZhAudC0n10UBmLrrqhQ2eBEXGT/8vLxjeXdAyaWA61VKERA7OtusSPNXEhJHKk6eUdPQWDN+kqq2lzJIat67kRwzCkkCHqqp0s5L0RU3qk0tyPhuasdLm9zC1gfqlTrRuLSFf+bWv86NQffsrsBst9Hgm5uQ9Ap6uHZLz6bvSXdVxgROncJ4QVBIvEuuEu+WGKiNigDD3ufDxX0qW8QJWcz0tnlLCo1IykNSbIRwU68CxjvriBChA/dWNuTI0eWsGY4aNGBJPzcTW0RWtC/e85X1dQZuD/WoMVRUr9CdZsaYazNG4cPZgwgQr2g51Vco5YUM1qmxBsM=
-    - secure: Dlqrzv3q+E9MNx3h0TnwccWZw9zivZhjPmMfKYEK5rIS6sI/nThnxi37U3VOW34Y/HKcMKq7TLDt5x4RJoZb4t9TI79tu6VOQ0E421QNGgoGG9WRYe/93mirUW1N/PqFGucClWfinCEQ1ijey59AYOT525ExYzYgcIJKKdRadQhSGAbuu5yra90Znjwwj8MmXxy8r44NpCc4AUFlj2oTH3mu7/iL1/2CjDyoqMrkx+5+e1/REXNRJZOjDhmjsZtQJPmXnlgngsavA9Gk4YfKzKCbTLr5m3X0561XbR8VfWt19fLXI8kO/TcYrC4Mf0lD+5JvBvh9iKVBcKvFQ7puxC3RF02qtCJ5T5IzNjxnpeIgK4ckGiFpa0LThyPMVGXlMlJ8qXV6wCCyg15Osxmb3F3IaNX15VNEVN3R37blFnsmzaayn/TymhsGPyc0+aGHmFntwdUOlNC6ZV01wJY/9IZNJKr+uUOlf7eIz/NHzsO/8nC/mPn5fpQ1eZ0eB4/Pek2ZIwTSKjtiws7jX0RL1ABEh3tIjAsG1SvUhmJeNt8yqn7r00PbBc1w81itF8HT5HeMHI6YHB3o/Tb/qnRcYiQ2F7vrUSiIKV7zBxJ+ERzZ/9sfmPO0JZwOSXeP1y0MqBf98Bdp477FDlJ3GfO1BTDV95TF6xYjkaRVxIwRL8s=
+  - COMMIT=${TRAVIS_COMMIT::8}
+  - secure: hxgFIsAtkMop3duuAN+MTlqxEmFVcFbb7b8ZAlOe0D5RcQmpIQquVnp3fMqfk1o57FiEF2DTAP69rCjJsaeiL2c725VAPqm3GXWbCbiOgyyDx/mhrxc9l2A8mEbntFmoceyyTAwVM7LrvzK83JPbuXhSHQWCFV9nKKC2qs1tfuDQEmEXEEG1KkEi6uOeNBREKrOfeOzc3ilE18eRhdIOVVRs7NQNy+qfLzEPNza2xOvp110GSbsoTUFHZSgZ5sinn+dU3oXdcquG0plzA6jF/4gbiLrbAOpihxF9VhZSnvwg0ZFIkDE9I+P8ZAoY7FrivLGNlUhTnKlP9Eeeg0LWkjrjxWlEeeaSuNZlJDxIvhM3OIMnkHtqPVviZ6PLf+/cxkEIm0aCHLi8u9fovMn+YqTFl0jpviPbAZI2sS8THCGH+bVcEDxGswXymkZpPOSmrpxahHeh7LS8qTNep/7u/EYPJW2nJyO/AT6CH/x1kjPFURNp6QdbbaEfYP2Gbbvj9uBxToAxWdJCtMgjY5GhjW4xyn6LQWIl4JosXTVv4SwQ91CO9yma/nrjKMw81aXzlVvOWOJfh3Hv6XOPH6tGXRGVckAMJA9Gc8aQENZRfHkSKxCpDq28z+8FP7DSc+qVZDzQNOzgPgdhaItnDYzxepNGGUiCgPg8B7ifKZC1Xrw=
+  - secure: coDxReBaTwaVif5sANGMWAsAj5qul0miZtJxY1aihw+bgvqQVIM4Hlxs8EOhIwlARWxEq0CugZir/B2kWvMemZqd/1Ffn8gIveXVDel/BUcOOw4/uPCZTdo0EuOCUO7KqCgJ7w5m/rYM2wjMsthpMADVWuHGT5ajR6+vm5IxxxazQog0d/oShLjHQQubd8CBxmYWm8PrIIC2Liz2XXY+27CBMrWD4R6KTP2bIRqUbNXs9sXA3LOaGGRrocD64EjRaO41CApO8V76M3SqKHTUe4W0EIx+cMKi5ZOyixRb+jO2CExaiYy2wfnSPMN8RFkudQRQWB/otgKU6uO7Y+5K/V5XfvbT4BphW9hHrRUEexRa+KjoG8U8F4UYuqoNUTQn0IVq6cU7MU2sUqnM72WNAUAIzD+TFmU77bCl+T9TOT2esW6UG/DSjhCXEShAa3UfO9/XlEwjS1LaiXdGl7dxPoO7GEbsqGQS8XQtXGU7tXbZGDSkA/j28e0OGwcZXVQrZ1e5lbPMUWNZEgf4/8GsZ2z7BlDaSigSHFtmOLHarNxWiiyRF/5bkrTXqIkdQrdGw7s7gtuJUikoTHvi1CBAJAPggB1pGgw49gzQNKFolFqy/8riDMm1za/dGuscmJ6nwJCsB9NhmqCmNPbuXOBW0XceWzE4RHbX0+0jyu2AJtE=
 before_install:
-  - make docker-deps-up
-
-# command to install dependencies
+- make docker-deps-up
 install:
-  - "pip install --upgrade pip setuptools wheel"
-  - "pip install -e ."
-
+- pip install --upgrade pip setuptools wheel
+- pip install -e .
 after_success:
-  - /bin/bash deploy
-  - make docker-deps-down
-
-# command to run tests
+- "/bin/bash deploy"
+- make docker-deps-down
 script: pytest
 notifications:
   slack:
     rooms:
-      - lcmap:UTqlh9PfPVomfpli10WKyZoh#cicd
+    - lcmap:UTqlh9PfPVomfpli10WKyZoh#cicd
