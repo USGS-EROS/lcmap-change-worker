@@ -23,3 +23,6 @@ docker-deps-down:
 deploy-pypi:
 
 deploy-dockerhub:
+
+clean:
+	@rm -rf dist build lcmap_change_worker.egg-info __pycache__ *.pyc

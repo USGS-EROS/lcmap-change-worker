@@ -3,7 +3,7 @@ import cw
 import pytest
 import pika
 
-with open("resources/config.json", "r+") as h:
+with open("test/resources/config.json", "r+") as h:
     config = json.loads(h.read())
 
 def connection(config):

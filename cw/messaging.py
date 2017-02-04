@@ -4,12 +4,16 @@ import pika
 # >>> params = pika.ConnectionParameters(host='lcsrlpnd01', port=5671, ssl=True)
 # >>> connect = pika.BlockingConnection(params)
 
+def connection (config):
+    return pika.BlockingConnection(
+        pika.ConnectionParameters(host=config['rabbitmqhost'],
+                                  port=config['rabbitmqport'],
+                                  ssl=config['rabbitmqssl']))
+
 class Receiving(object):
     def __init__(self, config):
         self.config = config
-        _connection = pika.BlockingConnection(pika.ConnectionParameters(host=config['rabbitmqhost'],
-                                                                        port=config['rabbitmqport'],
-                                                                        ssl=config['rabbitmqssl']))
+        _connection = connection(config)
         self.channel = _connection.channel()
         self.changequeue = config['rabbitmqlistenqueue']
 
@@ -18,13 +22,16 @@ class Receiving(object):
 
     def start_consuming(self):
         self.channel.queue_declare(queue=self.changequeue)
-        self.channel.basic_consume(self.callback_handler, queue=self.changequeue, no_ack=True)
+        self.channel.basic_consume(self.callback_handler,
+                                   queue=self.changequeue,
+                                   no_ack=True)
         self.channel.start_consuming()
 
 class Sending(object):
     def __init__(self, config):
         print("config: {}".format(config))
         print("type config: {}".format(type(config)))
+        self.config
         self.host = config['rabbitmqhost']
         self.port = config['rabbitmqport']
         self.ssl = config['rabbitmqssl']
@@ -33,9 +40,7 @@ class Sending(object):
         self.exchange = config['rabbitmqexchange']
 
     def send(self, message):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host,
-                                                                       port=self.port,
-                                                                       ssl=self.ssl))
+        connection = connection(self.config)
         channel = connection.channel()
         channel.queue_declare(queue=self.queue)
         channel.basic_publish(exchange=self.exchange,
