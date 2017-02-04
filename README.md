@@ -17,14 +17,14 @@ worker for initiating change detection jobs, and sending results to the data sto
 ```
 
 ```python
-# same effect as lcw-listen
-from cw import __listener__
-__listener__.main()
+  # same effect as lcw-listen
+  from cw import __listener__
+  __listener__.main()
 
-# useful for sending test messages only.
-from cw import __sender__
-message = '{"x": 123, "y": 456, "algorithm": "pyccd-beta1", "result": "OUTPUT"}'
-__sender__.main()
+  # useful for sending test messages only.
+  from cw import __sender__
+  message = '{"x": 123, "y": 456, "algorithm": "pyccd-beta1", "result": "OUTPUT"}'
+  __sender__.main()
 ```
 
 ## Configuration
