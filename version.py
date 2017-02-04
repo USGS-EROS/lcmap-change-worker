@@ -6,4 +6,4 @@ change_worker/__init__.py that are not present until after
 install. Do not import anything into this module."""
 __version__ = '0.1.0'
 __name = 'lcmap-change-worker'
-__algorithm__ = ':'.join([__name, __version__])
+__algorithm__ = '-'.join([__name, __version__])
