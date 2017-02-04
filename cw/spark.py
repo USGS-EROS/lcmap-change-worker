@@ -1,28 +1,24 @@
 #!/usr/bin/env python
+import ast
+import base64
+import ccd
+import hashlib
 import os
+import numpy as np
 import sys
 import requests
+import cw
 from glob import glob
 from datetime import datetime
-import base64
-import numpy as np
-from util import ubid_band_dict
-import ast
-import hashlib
-from messaging.sending import Sending
-
-import ccd
 
 class SparkException(Exception):
     pass
-
 
 class Spark(object):
     def __init__(self, config):
         self.config = config
         ubids = 'LANDSAT_7/ETM/sr_band1&ubid=LANDSAT_7/ETM/sr_band2&ubid=LANDSAT_7/ETM/sr_band4&ubid=LANDSAT_7/ETM/sr_band5&ubid=LANDSAT_7/ETM/sr_band7&ubid=LANDSAT_7/ETM/cfmask&ubid=LANDSAT_7/ETM/sr_band3&ubid=LANDSAT_7/ETM/toa_band6'
         self.ubids_list = ubids.split('&ubid=')
-        self.sender = Sending(config)
 
     def sort_band_data(self, band, field):
         return sorted(band, key=lambda x: x[field])
@@ -52,7 +48,7 @@ class Spark(object):
             _sorted = vars()[bucket+'_sorted'] = self.sort_band_data(vars()[bucket+'_clean'], 'acquired')
             vars()[bucket+'_bytes'] = [self.b64_to_bytearray(item['data']) for item in _sorted]
         dates = [self.dtstr_to_ordinal(i['acquired']) for i in vars()['band2_sorted']]
-        mapping = ubid_band_dict[band_group]
+        mapping = cw.ubid_band_dict[band_group]
         for band in "red green blue nirs swirs1 swirs2 thermals qas".split(" "):
             vars()[band+'_array'] = np.array(vars()[mapping[band] + '_bytes'])
             print("{}: len {}".format(band, len(vars()[band+'_array'])))
@@ -74,10 +70,10 @@ class Spark(object):
                               'thermals': vars()['thermals_array'][0:rows, lower:upper],
                               'qas': vars()['qas_array'][0:rows, lower:upper]}
                 output.append(_od)
-        except IndexError, e:
+        except IndexError as e:
             output = "IndexError for returned data: {}".format(e.message)
 
-        print "returning output from collect_output..."
+        print("returning output from collect_output...")
         return output
 
     def run_pyccd(self, datad):
@@ -96,8 +92,7 @@ class Spark(object):
         col = index - row * dim
         return {'y': tiley+row, 'x': tilex+col}
 
-    def run(self, indata):
-        input_d = ast.literal_eval(indata)
+    def run(self, input_d):
         # url = "http://lcmap-test.cr.usgs.gov/landsat/tiles?x=-2013585&y=3095805&acquired=1982-01-01/2017-01-01&ubid="
 
         resp = requests.get(input_d['inputs_url'])
@@ -121,29 +116,43 @@ class Spark(object):
         # output = collect_data(band_group, tile_resp.json())
         output = self.collect_data(band_group, resp.json())
 
+        # This block should be turned into a value that is returned
+        # from the call to run().  Sending/Receiving is a different
+        # responsibility than executing the tasks.
         # HACK
         if isinstance(output, str):
-            self.sender.send(output)
+            # gather other needed info, set result_ok to False, set result to
+            # output.  without x, y, algorithm then result cannot be saved
+            # by lcmap-changes
+            msg = "Query error:{}".format(output)
+            print(msg)
+            # be more specific about this exception.  Create one for
+            # QueryFailedException or whatevs.
+            raise Exception(msg)
         else:
             for item in output:
                 # item is a dict, keyed by pixel index {0: {dates: , green: , yada...}
                 pixel_index = item.keys()[0]
 
+                # for the short term, consider using multiprocessing pool
+                # to run these in parallel
                 results = self.run_pyccd(item)
+
                 outgoing = dict()
                 outgoing['x'], outgoing['y'] = self.pixel_xy(pixel_index, input_d['tile_x'], input_d['tile_y'])
                 outgoing['algorithm'] = input_d['algorithm']
                 outgoing['result_md5'] = hashlib.md5("{}".format(results)).hexdigest()
-                outgoing['result_status'] = 'ok'
+                # somehow determine if the result is ok or not.
+                # all True for the moment
+                outgoing['result_ok'] = True
                 outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-                outgoing['inputs_md5'] = hashlib.md5("{}".format(resp.json())).hexdigest()
+                #outgoing['inputs_md5'] = hashlib.md5("{}".format(resp.json())).hexdigest()
+                outgoing['inputs_md5'] = 'not implemented'
 
-                self.sender.send("{}".format(outgoing))
-
-        return True
-
+                # act as a generator so results can be sent over messaging as they
+                # arrive
+                yield outgoing
 
 def run(config, indata):
     sprk = Spark(config)
     return sprk.run(indata)
-
