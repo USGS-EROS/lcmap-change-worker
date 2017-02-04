@@ -24,21 +24,8 @@ deploy-pypi:
 
 deploy-dockerhub:
 
-venv:
-	@virtualenv -p python3 .venv
-
-activate:
-	@. .venv/bin/activate
-
-deactivate:
-	@deactivate
-
-clean-venv: deactivate
+clean-venv:
 	@rm -rf .venv
 
 clean:
 	@rm -rf dist build lcmap_change_worker.egg-info __pycache__ *.pyc
-
-init-cold: clean clean-venv venv activate
-	@pip install -e .[test]
-  @pip install -e .[dev]

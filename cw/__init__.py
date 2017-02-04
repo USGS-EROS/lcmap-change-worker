@@ -1,13 +1,14 @@
+import os
 from . import messaging
 from . import spark
 #from messaging.sending import Sending
 
 config = {'rabbit-host': os.getenv('lcw-rabbit-host', 'localhost'),
           'rabbit-port': os.getenv('lcw-rabbit-port', 5672),
-          'rabbit-queue': os.getenv('lcw-rabbit-queue': 'unit.lcmap.changes.worker'),
+          'rabbit-queue': os.getenv('lcw-rabbit-queue', 'unit.lcmap.changes.worker'),
           'rabbit-exchange': os.getenv('lcw-rabbit-exchange', 'unit.lcmap.changes.worker'),
-          'rabbit-binding': os.getenv('lcw-rabbit-binding', 'unit.b) 'unit.'',
-          'rabbit-ssl': false,
+          'rabbit-binding': os.getenv('lcw-rabbit-binding', 'unit.b'),
+          'rabbit-ssl': False,
           'ubid_band_dict' : {
               'tm': {'red': 'band3',
                      'blue': 'band1',
