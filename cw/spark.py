@@ -92,8 +92,7 @@ class Spark(object):
         col = index - row * dim
         return {'y': tiley+row, 'x': tilex+col}
 
-    def run(self, indata):
-        input_d = ast.literal_eval(indata)
+    def run(self, input_d):
         # url = "http://lcmap-test.cr.usgs.gov/landsat/tiles?x=-2013585&y=3095805&acquired=1982-01-01/2017-01-01&ubid="
 
         resp = requests.get(input_d['inputs_url'])
@@ -125,22 +124,34 @@ class Spark(object):
             # gather other needed info, set result_ok to False, set result to
             # output.  without x, y, algorithm then result cannot be saved
             # by lcmap-changes
-            return output
-            #self.sender.send(output)
+            msg = "Query error:{}".format(output)
+            print(msg)
+            # be more specific about this exception.  Create one for
+            # QueryFailedException or whatevs.
+            raise Exception(msg)
         else:
             for item in output:
                 # item is a dict, keyed by pixel index {0: {dates: , green: , yada...}
                 pixel_index = item.keys()[0]
 
+                # for the short term, consider using multiprocessing pool
+                # to run these in parallel
                 results = self.run_pyccd(item)
+
                 outgoing = dict()
                 outgoing['x'], outgoing['y'] = self.pixel_xy(pixel_index, input_d['tile_x'], input_d['tile_y'])
                 outgoing['algorithm'] = input_d['algorithm']
                 outgoing['result_md5'] = hashlib.md5("{}".format(results)).hexdigest()
+                # somehow determine if the result is ok or not.
+                # all True for the moment
                 outgoing['result_ok'] = True
                 outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-                outgoing['inputs_md5'] = hashlib.md5("{}".format(resp.json())).hexdigest()
-                return outgoing
+                #outgoing['inputs_md5'] = hashlib.md5("{}".format(resp.json())).hexdigest()
+                outgoing['inputs_md5'] = 'not implemented'
+
+                # act as a generator so results can be sent over messaging as they
+                # arrive
+                yield outgoing
 
 def run(config, indata):
     sprk = Spark(config)
