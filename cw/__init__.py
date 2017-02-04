@@ -13,12 +13,12 @@ from . import spark
 #                    datefmt='%Y-%m-%d %H:%M:%S')
 #logger = logging.getLogger('lcw')
 
-config = {'rabbit-host': os.getenv('lcw_rabbit_host', 'localhost'),
-          'rabbit-port': os.getenv('lcw_rabbit_port', 5672),
-          'rabbit-queue': os.getenv('lcw_rabbit_queue', 'local.lcmap.changes.worker'),
-          'rabbit-exchange': os.getenv('lcw_rabbit_exchange', 'local.lcmap.changes.worker'),
-          'rabbit-result-routing-key': os.getenv('lcw_rabbit_result_routing_key', 'change-detection-result'),
-          'rabbit-ssl': os.getenv('lcw_rabbit_ssl', False),
+config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
+          'rabbit-port': os.getenv('LCW_RABBIT_PORT', 5672),
+          'rabbit-queue': os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changes.worker'),
+          'rabbit-exchange': os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker'),
+          'rabbit-result-routing-key': os.getenv('LCW_RABBIT_RESULT_ROUTING_KEY', 'change-detection-result'),
+          'rabbit-ssl': os.getenv('LCW_RABBIT_SSL', False),
           'ubid_band_dict' : {
               'tm': {'red': 'band3',
                      'blue': 'band1',
