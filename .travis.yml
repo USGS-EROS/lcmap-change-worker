@@ -2,10 +2,17 @@ language: python
 python:
   - "3.4"
   - "3.5"
+
+before_install:
+  - make docker-deps-up
+
 # command to install dependencies
 install:
   - "pip install --upgrade pip setuptools wheel"
-  - "python setup.py install"
+  - "pip install -e ."
+
+after_success:
+  - make docker-deps-down
 
 # command to run tests
 script: pytest
