@@ -1,11 +1,10 @@
-import ast
+import json
 import cw
 import pytest
 import pika
 
-def config():
-    with open("resources/config.txt", "rb+") as h:
-        return ast.literal_eval(h.read())
+with open("resources/config.json", "r+") as h:
+    config = json.loads(h.read())
 
 def connection(config):
     pass

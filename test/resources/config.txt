@@ -1,6 +1,0 @@
-"{'rabbitmqhost':'localhost',
-  'rabbitmqport':5672,
-  'rabbitmqlistenqueue':'unit.lcmap.changes.worker',
-  'rabbitmqchangequeue':'unit.lcmap.changes.worker',
-  'rabbitmqbinding': 'unit.'
-  'rabbitmqssl':False}"

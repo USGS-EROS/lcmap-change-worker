@@ -6,10 +6,7 @@ worker for initiating change detection jobs, and sending results to the data sto
 ## Install
 ```bash
   # locally
-  $ python setup.py install
-
-  # from pypi
-  $ pip install lcmap-change-worker
+  $ pip install -e.
 ```
 ## Configuration
 
@@ -22,8 +19,6 @@ Get the local environment ready for development and testing.
    $ . .venv/bin/activate
    $ pip install -e .[test]
    $ pip install -e .[dev]
-   # This is temporary until pyccd is pushed into pypi   
-   $ pip install -r pyccd-requirement.txt
 ```
 
 Run tests:

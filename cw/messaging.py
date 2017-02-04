@@ -1,4 +1,3 @@
-import ast
 import cw
 import pika
 
@@ -6,16 +5,16 @@ import pika
 # >>> connect = pika.BlockingConnection(params)
 
 class Receiving(object):
-    def __init__(self, sysargs):
-        self._config = ast.literal_eval(sysargs)
-        _connection = pika.BlockingConnection(pika.ConnectionParameters(host=self._config['rabbitmqhost'],
-                                                                        port=self._config['rabbitmqport'],
-                                                                        ssl=self._config['rabbitmqssl']))
+    def __init__(self, config):
+        self.config = config
+        _connection = pika.BlockingConnection(pika.ConnectionParameters(host=config['rabbitmqhost'],
+                                                                        port=config['rabbitmqport'],
+                                                                        ssl=config['rabbitmqssl']))
         self.channel = _connection.channel()
-        self.changequeue = self._config['rabbitmqlistenqueue']
+        self.changequeue = config['rabbitmqlistenqueue']
 
     def callback_handler(self, ch, method, properties, body):
-        cw.launch_task(self._config, body)
+        cw.launch_task(self.config, body)
 
     def start_consuming(self):
         self.channel.queue_declare(queue=self.changequeue)
@@ -23,15 +22,15 @@ class Receiving(object):
         self.channel.start_consuming()
 
 class Sending(object):
-    def __init__(self, sysargs):
-        print("sysargs: {}".format(sysargs))
-        print("type sysargs: {}".format(type(sysargs)))
-        self.host = sysargs['rabbitmqhost']
-        self.port = sysargs['rabbitmqport']
-        self.ssl = sysargs['rabbitmqssl']
-        self.queue = sysargs['rabbitmqchangequeue']
+    def __init__(self, config):
+        print("config: {}".format(config))
+        print("type config: {}".format(type(config)))
+        self.host = config['rabbitmqhost']
+        self.port = config['rabbitmqport']
+        self.ssl = config['rabbitmqssl']
+        self.queue = config['rabbitmqchangequeue']
         self.routing_key = 'change-detection'
-        self.exchange = sysargs['rabbitmqexchange']
+        self.exchange = config['rabbitmqexchange']
 
     def send(self, message):
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host,
