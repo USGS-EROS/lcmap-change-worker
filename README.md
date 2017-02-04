@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/USGS-EROS/lcmap-change-worker.svg?branch=develop)](https://travis-ci.org/USGS-EROS/lcmap-change-worker)
+
 # lcmap-change-worker
 worker for initiating change detection jobs, and sending results to the data store
 
