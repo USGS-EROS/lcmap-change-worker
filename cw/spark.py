@@ -133,8 +133,9 @@ class Spark(object):
             print("Data is valid to run pyccd. Proceeding.")
             for item in output:
                 # item is a dict, keyed by pixel index {0: {dates: , green: , yada...}
-                print("item.keys:{}".format(item.keys()))
-                pixel_index = item.keys()[0]
+                print("item.keys:{}".format(list(item)))
+                #pixel_index = item.keys()[0]
+                pixel_index = list(item)[0]
 
                 # for the short term, consider using multiprocessing pool
                 # to run these in parallel
