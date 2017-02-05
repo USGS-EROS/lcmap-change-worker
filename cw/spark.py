@@ -73,7 +73,7 @@ class Spark(object):
         except IndexError as e:
             output = "IndexError for returned data: {}".format(e.message)
 
-        print("returning output from collect_output...")
+        print("returning {} output items from collect_data".format(len(output)))
         return output
 
     def run_pyccd(self, datad):
@@ -115,7 +115,7 @@ class Spark(object):
 
         # output = collect_data(band_group, tile_resp.json())
         output = self.collect_data(band_group, resp.json())
-
+        print("Have data of type {}, ready to attempt pyccd.".format(type(output)))
         # This block should be turned into a value that is returned
         # from the call to run().  Sending/Receiving is a different
         # responsibility than executing the tasks.
@@ -130,8 +130,10 @@ class Spark(object):
             # QueryFailedException or whatevs.
             raise Exception(msg)
         else:
+            print("Data is valid to run pyccd. Proceeding.")
             for item in output:
                 # item is a dict, keyed by pixel index {0: {dates: , green: , yada...}
+                print("item.keys:{}".format(item.keys()))
                 pixel_index = item.keys()[0]
 
                 # for the short term, consider using multiprocessing pool
