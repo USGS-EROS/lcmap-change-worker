@@ -1,3 +1,4 @@
+import codecs
 import logging
 import json
 import os
@@ -50,8 +51,9 @@ def launch_task(cfg, msg_body):
 def callback(cfg):
     def handler(ch, method, properties, body):
         try:
+            print("Body type:{}".format(type(body.decode('utf-8'))))
             print("Launching task for {}".format(body))
-            results = launch_task(cfg, json.loads(body))
+            results = launch_task(cfg, json.loads(body.decode('utf-8')))
             print("Now returning results.")
             for result in results:
                 if type(result) is dict:
