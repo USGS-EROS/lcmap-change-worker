@@ -47,19 +47,21 @@ def launch_task(cfg, msg_body):
     # msg_body needs to be a url
     return spark.run(cfg, msg_body)
 
-def callback_handler(cfg, ch, method, properties, body):
-    try:
-        print("Launching task for {}".format(body))
-        results = launch_task(cfg, json.loads(body))
-        print("Now returning results.")
-        for result in results:
-            if type(result) is dict:
-                # right now, dict type indicates successful execution.
-                # results may not be valid though
-                print(send(cfg, json.dumps(result)))
-            else:
-                # not successful, do something with this error like send it to
-                # an error queue or logfile.  print for the moment.
-                print("Execution error:{}".format(result))
-    except Exception as e:
-        print("Exception message: {}".format(e))
+def callback(cfg):
+    def handler(ch, method, properties, body):
+        try:
+            print("Launching task for {}".format(body))
+            results = launch_task(cfg, json.loads(body))
+            print("Now returning results.")
+            for result in results:
+                if type(result) is dict:
+                    # right now, dict type indicates successful execution.
+                    # results may not be valid though
+                    print(send(cfg, json.dumps(result)))
+                else:
+                    # not successful, do something with this error like send it to
+                    # an error queue or logfile.  print for the moment.
+                    print("Execution error:{}".format(result))
+        except Exception as e:
+            print("Exception message: {}".format(e))
+    return handler
