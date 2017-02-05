@@ -14,7 +14,7 @@ from . import spark
 #logger = logging.getLogger('lcw')
 
 config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
-          'rabbit-port': os.getenv('LCW_RABBIT_PORT', 5672),
+          'rabbit-port': int(os.getenv('LCW_RABBIT_PORT', 5672)),
           'rabbit-queue': os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changes.worker'),
           'rabbit-exchange': os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker'),
           'rabbit-result-routing-key': os.getenv('LCW_RABBIT_RESULT_ROUTING_KEY', 'change-detection-result'),
