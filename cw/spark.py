@@ -48,7 +48,7 @@ class Spark(object):
             _sorted = vars()[bucket+'_sorted'] = self.sort_band_data(vars()[bucket+'_clean'], 'acquired')
             vars()[bucket+'_bytes'] = [self.b64_to_bytearray(item['data']) for item in _sorted]
         dates = [self.dtstr_to_ordinal(i['acquired']) for i in vars()['band2_sorted']]
-        mapping = cw.ubid_band_dict[band_group]
+        mapping = self.config['ubid_band_dict'][band_group]
         for band in "red green blue nirs swirs1 swirs2 thermals qas".split(" "):
             vars()[band+'_array'] = np.array(vars()[mapping[band] + '_bytes'])
             print("{}: len {}".format(band, len(vars()[band+'_array'])))
