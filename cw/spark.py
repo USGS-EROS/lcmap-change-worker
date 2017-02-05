@@ -81,9 +81,17 @@ class Spark(object):
             _x = [i[0] for i in _d]
             return np.array(_x)
 
-        data = datad.values()[0]
+        data = list(datad.values())[0]
         print ("data is: {}".format(type(data)))
-        results = ccd.detect(data['dates'], np_to_list(data['blue']), np_to_list(data['green']), np_to_list(data['red']), np_to_list(data['nirs']), np_to_list(data['swirs1']), np_to_list(data['swirs2']), np_to_list(data['thermals']), np_to_list(data['qas']))
+        results = ccd.detect(data['dates'],
+                             np_to_list(data['blue']),
+                             np_to_list(data['green']),
+                             np_to_list(data['red']),
+                             np_to_list(data['nirs']),
+                             np_to_list(data['swirs1']),
+                             np_to_list(data['swirs2']),
+                             np_to_list(data['thermals']),
+                             np_to_list(data['qas']))
         return results
 
     def pixel_xy(self, index, tilex, tiley, dim=100):
