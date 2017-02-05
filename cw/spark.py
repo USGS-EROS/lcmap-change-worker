@@ -149,12 +149,14 @@ class Spark(object):
                 # for the short term, consider using multiprocessing pool
                 # to run these in parallel
                 results = self.run_pyccd(item)
+                print("Results type:{}".format(type(results)))
+                print("Results:{}".format(results))
 
                 outgoing = dict()
                 outgoing['result'] = results
                 xy = self.pixel_xy(pixel_index, input_d['tile_x'], input_d['tile_y'])
-                print("XY results:{}".format(xy))
-                outgoing['x'], outgoing['y'] = xy
+                outgoing['x'] = xy['x']
+                outgoing['y'] = xy['y']
                 outgoing['algorithm'] = input_d['algorithm']
                 outgoing['result_md5'] = hashlib.md5("{}".format(results).encode('utf-8')).hexdigest()
                 #outgoing['result_md5'] = hashlib.md5(   "{}".format(results) .hexdigest()
