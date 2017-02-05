@@ -65,9 +65,9 @@ def callback(cfg):
                     # not successful, do something with this error like send it to
                     # an error queue or logfile.  print for the moment.
                     print("Execution error:{}".format(result))
-                    traceback.print_exc()
+                    traceback.print_exc(file=sys.stdout)
         except Exception as e:
             print("Exception message: {}".format(e))
-            traceback.print_exc()
+            traceback.print_exc(file=sys.stdout)
 
     return handler
