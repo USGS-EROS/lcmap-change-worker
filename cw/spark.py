@@ -101,6 +101,7 @@ class Spark(object):
         return {'y': tiley+row, 'x': tilex+col}
 
     def run(self, input_d):
+        print("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
         # url = "http://lcmap-test.cr.usgs.gov/landsat/tiles?x=-2013585&y=3095805&acquired=1982-01-01/2017-01-01&ubid="
 
         resp = requests.get(input_d['inputs_url'])
@@ -150,7 +151,10 @@ class Spark(object):
                 results = self.run_pyccd(item)
 
                 outgoing = dict()
-                outgoing['x'], outgoing['y'] = self.pixel_xy(pixel_index, input_d['tile_x'], input_d['tile_y'])
+                outgoing['result'] = results
+                xy = self.pixel_xy(pixel_index, input_d['tile_x'], input_d['tile_y'])
+                print("XY results:{}".format(xy))
+                outgoing['x'], outgoing['y'] = xy
                 outgoing['algorithm'] = input_d['algorithm']
                 outgoing['result_md5'] = hashlib.md5("{}".format(results).encode('utf-8')).hexdigest()
                 #outgoing['result_md5'] = hashlib.md5(   "{}".format(results) .hexdigest()
