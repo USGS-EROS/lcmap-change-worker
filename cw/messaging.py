@@ -8,13 +8,13 @@ def open_connection (cfg):
                                   ssl=cfg['rabbit-ssl']))
 
 def close_connection(conn):
-    if conn is not None and conn.is_open():
+    if conn is not None and conn.is_open:
         try:
             conn.close()
         except Exception as e:
             pass
     return True
-    
+
 def listen(cfg, callback_handler):
     conn = None
     try:
