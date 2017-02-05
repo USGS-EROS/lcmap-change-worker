@@ -21,7 +21,7 @@ echo Commit: $COMMIT
 # be added to the image. This expects a particular versioning scheme
 # and handles the case when the string "-SNAPSHOT" is not present.
 #export VERSION=`head -n1 project.clj | grep -oP "[\d+]\.[\d+]\.[\d+](-SNAPSHOT)?"`
-export VERSION=`python -c 'import version; print(version.__algorithm__)'`
+export VERSION=`python -c 'import version; print(version.__version__)'`
 echo Version: $VERSION
 
 # The docker login command print an error if authentication
