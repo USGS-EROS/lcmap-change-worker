@@ -49,12 +49,14 @@ def launch_task(cfg, msg_body):
 
 def callback_handler(cfg, ch, method, properties, body):
     try:
+        print("Launching task for {}".format(body))
         results = launch_task(cfg, json.loads(body))
+        print("Now returning results.")
         for result in results:
             if type(result) is dict:
                 # right now, dict type indicates successful execution.
                 # results may not be valid though
-                send(cfg, json.dumps(result))
+                print(send(cfg, json.dumps(result)))
             else:
                 # not successful, do something with this error like send it to
                 # an error queue or logfile.  print for the moment.
