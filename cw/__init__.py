@@ -3,6 +3,7 @@ import logging
 import json
 import os
 import sys
+import traceback
 from . import messaging
 from . import spark
 
@@ -54,7 +55,7 @@ def callback(cfg):
             print("Body type:{}".format(type(body.decode('utf-8'))))
             print("Launching task for {}".format(body))
             results = launch_task(cfg, json.loads(body.decode('utf-8')))
-            print("Now returning results.")
+            print("Now returning results of type:{}".format(type(results)))
             for result in results:
                 if type(result) is dict:
                     # right now, dict type indicates successful execution.
@@ -64,6 +65,9 @@ def callback(cfg):
                     # not successful, do something with this error like send it to
                     # an error queue or logfile.  print for the moment.
                     print("Execution error:{}".format(result))
+                    traceback.print_exc()
         except Exception as e:
             print("Exception message: {}".format(e))
+            traceback.print_exc()
+
     return handler
