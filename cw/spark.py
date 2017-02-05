@@ -152,7 +152,8 @@ class Spark(object):
                 outgoing = dict()
                 outgoing['x'], outgoing['y'] = self.pixel_xy(pixel_index, input_d['tile_x'], input_d['tile_y'])
                 outgoing['algorithm'] = input_d['algorithm']
-                outgoing['result_md5'] = hashlib.md5("{}".format(results)).encode('utf-8').hexdigest()
+                outgoing['result_md5'] = hashlib.md5("{}".format(results).encode('utf-8')).hexdigest()
+                #outgoing['result_md5'] = hashlib.md5(   "{}".format(results) .hexdigest()
                 # somehow determine if the result is ok or not.
                 # all True for the moment
                 outgoing['result_ok'] = True
