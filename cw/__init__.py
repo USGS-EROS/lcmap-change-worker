@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import traceback
+import numpy as np
 from . import messaging
 from . import spark
 
@@ -20,34 +21,98 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
           'rabbit-exchange': os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker'),
           'rabbit-result-routing-key': os.getenv('LCW_RABBIT_RESULT_ROUTING_KEY', 'change-detection-result'),
           'rabbit-ssl': os.getenv('LCW_RABBIT_SSL', False),
+          'api-host': os.getenv('LCW_API_HOST', 'http://localhost:5678'),
           'ubid_band_dict' : {
               'tm': {'red': 'band3',
                      'blue': 'band1',
                      'green': 'band2',
                      'nirs': 'band4',
-                     'swirs1': 'band5',
-                     'swirs2': 'band7',
+                     'swir1s': 'band5',
+                     'swir2s': 'band7',
                      'thermals': 'band6',
                      'qas': 'cfmask'},
               'oli': {'red': 'band4',
                       'blue': 'band2',
                       'green': 'band3',
                       'nirs': 'band5',
-                      'swirs1': 'band6',
-                      'swirs2': 'band7',
+                      'swir1s': 'band6',
+                      'swir2s': 'band7',
                       'thermals': 'band10',
                       'qas': 'cfmask'}}}
+
+numpy_type_map = {
+    'UINT8': np.uint8,
+    'UINT16': np.uint16,
+    'INT8': np.int8,
+    'INT16': np.int16
+}
+
+# landsat 4 & 5 commented
+# out for now. data gaps
+# causing problems from dev api
+spectral_map = {
+    'blue':[
+        #'LANDSAT_4/TM/sr_band1',
+        #'LANDSAT_5/TM/sr_band1',
+        'LANDSAT_7/ETM/sr_band1',
+        'LANDSAT_8/OLI_TIRS/sr_band2'
+    ],
+    'green':[
+        #'LANDSAT_4/TM/sr_band2',
+        #'LANDSAT_5/TM/sr_band2',
+        'LANDSAT_7/ETM/sr_band2',
+        'LANDSAT_8/OLI_TIRS/sr_band3'
+    ],
+    'red':[
+        #'LANDSAT_4/TM/sr_band3',
+        #'LANDSAT_5/TM/sr_band3',
+        'LANDSAT_7/ETM/sr_band3',
+        'LANDSAT_8/OLI_TIRS/sr_band4'
+    ],
+    'nir':[
+        #'LANDSAT_4/TM/sr_band4',
+        #'LANDSAT_5/TM/sr_band4',
+        'LANDSAT_7/ETM/sr_band4',
+        'LANDSAT_8/OLI_TIRS/sr_band5'
+    ],
+    'swir1':[
+        #'LANDSAT_4/TM/sr_band5',
+        #'LANDSAT_5/TM/sr_band5',
+        'LANDSAT_7/ETM/sr_band5',
+        'LANDSAT_8/OLI_TIRS/sr_band6'
+    ],
+    'swir2':[
+        #'LANDSAT_4/TM/sr_band7',
+        #'LANDSAT_5/TM/sr_band7',
+        'LANDSAT_7/ETM/sr_band7',
+        'LANDSAT_8/OLI_TIRS/sr_band7'
+    ],
+    'thermal':[
+        #'LANDSAT_4/TM/toa_band6',
+        #'LANDSAT_5/TM/toa_band6',
+        'LANDSAT_7/ETM/toa_band6',
+        'LANDSAT_8/OLI_TIRS/toa_band10'
+    ],
+    'cfmask':[
+        #'LANDSAT_4/TM/cfmask',
+        #'LANDSAT_5/TM/cfmask',
+        'LANDSAT_7/ETM/cfmask',
+        'LANDSAT_8/OLI_TIRS/cfmask'
+    ]}
 
 
 def send(cfg, message):
     return messaging.send(cfg, message)
 
+
 def listen(cfg, callback):
     messaging.listen(cfg, callback)
+
 
 def launch_task(cfg, msg_body):
     # msg_body needs to be a url
     return spark.run(cfg, msg_body)
+
 
 def callback(cfg):
     def handler(ch, method, properties, body):
