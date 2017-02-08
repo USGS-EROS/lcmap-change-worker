@@ -61,9 +61,6 @@ class Spark(object):
 
     def detect(self, rainbow, x, y):
         """ Return results of ccd.detect for a given stack of data at a particular x and y """
-        print("dates xx: {}".format(list(rainbow['ordinal'])[0]))
-        print("date type: {}".format(type(list(rainbow['ordinal'])[0])))
-        print("thermal: {}".format(np.array(rainbow['red'].values[0:10, x, y])))
         return ccd.detect(blues=np.array(rainbow['blue'].values[:, x, y]),
                           greens=np.array(rainbow['green'].values[:, x, y]),
                           reds=np.array(rainbow['red'].values[:, x, y]),
@@ -84,7 +81,7 @@ class Spark(object):
 
         dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
         tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
-        rainbow = self.rainbow(input_d['tile_x'], input_d['tile_y'], dates)
+        rainbow = self.rainbow(tile_x, tile_y, dates)
 
         # hard coding dimensions for the moment,
         # it should come from a tile-spec query
@@ -94,7 +91,6 @@ class Spark(object):
         dimcell = 30
         for x in range(0, dimrng):
             for y in range(0, dimrng):
-                #row = int(x / dimrng)
                 cell_x = (dimcell * x) + tile_x
                 cell_y = (dimcell * y) + tile_y
                 # results.keys(): algorithm, change_models, procedure, processing_mask,
