@@ -2,6 +2,7 @@
 import base64
 import ccd
 import hashlib
+import math
 import numpy as np
 import requests
 import xarray as xr
@@ -87,17 +88,18 @@ class Spark(object):
         # {'data_shape': [100, 100], 'pixel_x': 30, 'pixel_y': -30}
         # tile-spec query results should then be provided to self.detect()
         dimrng = 100
-        dimcell = 30
         for x in range(0, dimrng):
             for y in range(0, dimrng):
-                cell_x = (dimcell * x) + tile_x
-                cell_y = (dimcell * y) + tile_y
+                tx, ty = (100, 100)
+                px, py = (30, -30)
+                xx = tile_x + (x % tx) * px
+                yy = tile_y + math.floor(y / ty) * py
                 # results.keys(): algorithm, change_models, procedure, processing_mask,
                 results = self.detect(rainbow, x, y)
 
                 outgoing = dict()
                 outgoing['result'] = str(results)
-                outgoing['x'], outgoing['y'] = cell_x, cell_y
+                outgoing['x'], outgoing['y'] = xx, yy
                 outgoing['algorithm'] = results['algorithm']
                 outgoing['result_md5'] = hashlib.md5("{}".format(results).encode('utf-8')).hexdigest()
                 # somehow determine if the result is ok or not.
