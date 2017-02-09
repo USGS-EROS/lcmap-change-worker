@@ -33,11 +33,10 @@ class Spark(object):
 
     def landsat_dataset(self, spectrum, x, y, t, ubid):
         """ Return stack of landsat data for a given ubid, x, y, and time-span """
-        # specs = requests.get('http://lcmap-dev.cr.usgs.gov/landsat/tile-specs').json()
-        specs     = requests.get(self.config['api-host']+'tile-specs').json()
+        specs     = requests.get(self.config['api-host']+'/landsat/tile-specs').json()
         specs_map = dict([[spec['ubid'], spec] for spec in specs])
         query     = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
-        tiles     = requests.get(self.config['api-host']+'/tiles', params=query).json()
+        tiles     = requests.get(self.config['api-host']+'/landsat/tiles', params=query).json()
         rasters   = xr.DataArray([self.as_numpy_array(tile, specs_map) for tile in tiles])
 
         ds = xr.Dataset()
