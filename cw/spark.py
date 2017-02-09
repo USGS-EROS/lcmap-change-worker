@@ -52,7 +52,7 @@ class Spark(object):
     def rainbow(self, x, y, t):
         """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
         ds = xr.Dataset()
-        for (spectrum, ubids) in cw.spectral_map.items():
+        for (spectrum, ubids) in cw.spectral_map(self.config).items():
             for ubid in ubids:
                 band = self.landsat_dataset(spectrum, x, y, t, ubid)
                 if band:

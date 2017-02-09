@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import traceback
+import requests
 import numpy as np
 from . import messaging
 from . import spark
@@ -22,7 +23,7 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
           'rabbit-result-routing-key': os.getenv('LCW_RABBIT_RESULT_ROUTING_KEY', 'change-detection-result'),
           'rabbit-ssl': os.getenv('LCW_RABBIT_SSL', False),
           'api-host': os.getenv('LCW_API_HOST', 'http://localhost:5678'),
-          'ubid_band_dict' : {
+          'ubid_band_dict': {
               'tm': {'red': 'band3',
                      'blue': 'band1',
                      'green': 'band2',
@@ -47,58 +48,21 @@ numpy_type_map = {
     'INT16': np.int16
 }
 
-# landsat 4 & 5 commented
-# out for now. data gaps
-# causing problems from dev api
-spectral_map = {
-    'blue':[
-        #'LANDSAT_4/TM/sr_band1',
-        #'LANDSAT_5/TM/sr_band1',
-        'LANDSAT_7/ETM/sr_band1',
-        'LANDSAT_8/OLI_TIRS/sr_band2'
-    ],
-    'green':[
-        #'LANDSAT_4/TM/sr_band2',
-        #'LANDSAT_5/TM/sr_band2',
-        'LANDSAT_7/ETM/sr_band2',
-        'LANDSAT_8/OLI_TIRS/sr_band3'
-    ],
-    'red':[
-        #'LANDSAT_4/TM/sr_band3',
-        #'LANDSAT_5/TM/sr_band3',
-        'LANDSAT_7/ETM/sr_band3',
-        'LANDSAT_8/OLI_TIRS/sr_band4'
-    ],
-    'nir':[
-        #'LANDSAT_4/TM/sr_band4',
-        #'LANDSAT_5/TM/sr_band4',
-        'LANDSAT_7/ETM/sr_band4',
-        'LANDSAT_8/OLI_TIRS/sr_band5'
-    ],
-    'swir1':[
-        #'LANDSAT_4/TM/sr_band5',
-        #'LANDSAT_5/TM/sr_band5',
-        'LANDSAT_7/ETM/sr_band5',
-        'LANDSAT_8/OLI_TIRS/sr_band6'
-    ],
-    'swir2':[
-        #'LANDSAT_4/TM/sr_band7',
-        #'LANDSAT_5/TM/sr_band7',
-        'LANDSAT_7/ETM/sr_band7',
-        'LANDSAT_8/OLI_TIRS/sr_band7'
-    ],
-    'thermal':[
-        #'LANDSAT_4/TM/toa_band6',
-        #'LANDSAT_5/TM/toa_band6',
-        'LANDSAT_7/ETM/toa_band6',
-        'LANDSAT_8/OLI_TIRS/toa_band10'
-    ],
-    'cfmask':[
-        #'LANDSAT_4/TM/cfmask',
-        #'LANDSAT_5/TM/cfmask',
-        'LANDSAT_7/ETM/cfmask',
-        'LANDSAT_8/OLI_TIRS/cfmask'
-    ]}
+
+def spectral_map(cfg):
+    """ Return a dict of sensor bands keyed to their respective spectrum """
+    _spec_map = dict()
+    _map = {'thermal': 'toa -11', 'cfmask': '+cfmask -conf'}
+    for bnd in 'blue green red nir swir1 swir2'.split(' '):
+        _map[bnd] = 'sr'
+
+    for spectra in _map:
+        url = "{host}/landsat/tile-specs?q=((tags:{band}) AND tags:{spec})"
+        resp = requests.get(url.format(host=cfg['api-host'],
+                                       spec=spectra,
+                                       band=_map[spectra])).json()
+        _spec_map[spectra] = [i['ubid'] for i in resp]
+    return _spec_map
 
 
 def send(cfg, message):
