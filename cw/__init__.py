@@ -22,7 +22,10 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
           'rabbit-exchange': os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker'),
           'rabbit-result-routing-key': os.getenv('LCW_RABBIT_RESULT_ROUTING_KEY', 'change-detection-result'),
           'rabbit-ssl': os.getenv('LCW_RABBIT_SSL', False),
-          'api-host': os.getenv('LCW_API_HOST', 'http://localhost:5678'),
+          'api-host': os.getenv('LCW_API_HOST', 'http://localhost'),
+          'api-port': os.getenv('LCW_API_PORT', '5678'),
+          'tile-specs-url': os.getenv('LCW_SPECS_URL', '/tile-specs'),
+          'tiles-url': os.getenv('LCW_TILES_URL', '/tiles'),
           'ubid_band_dict': {
               'tm': {'red': 'band3',
                      'blue': 'band1',
@@ -39,30 +42,16 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
                       'swir1s': 'band6',
                       'swir2s': 'band7',
                       'thermals': 'band10',
-                      'qas': 'cfmask'}}}
+                      'qas': 'cfmask'}},
+           'numpy_type_map': {
+               'UINT8': np.uint8,
+               'UINT16': np.uint16,
+               'INT8': np.int8,
+               'INT16': np.int16
+           }
+          }
 
-numpy_type_map = {
-    'UINT8': np.uint8,
-    'UINT16': np.uint16,
-    'INT8': np.int8,
-    'INT16': np.int16
-}
 
-
-def spectral_map(cfg):
-    """ Return a dict of sensor bands keyed to their respective spectrum """
-    _spec_map = dict()
-    _map = {'thermal': 'toa -11', 'cfmask': '+cfmask -conf'}
-    for bnd in 'blue green red nir swir1 swir2'.split(' '):
-        _map[bnd] = 'sr'
-
-    for spectra in _map:
-        url = "{host}/landsat/tile-specs?q=((tags:{band}) AND tags:{spec})"
-        resp = requests.get(url.format(host=cfg['api-host'],
-                                       spec=spectra,
-                                       band=_map[spectra])).json()
-        _spec_map[spectra] = [i['ubid'] for i in resp]
-    return _spec_map
 
 
 def send(cfg, message):

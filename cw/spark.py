@@ -18,6 +18,21 @@ class SparkException(Exception):
 class Spark(object):
     def __init__(self, config):
         self.config = config
+        self.tiles_url = "{}:{}/{}".format(self.config['api-host'], self.config['api-port'], self.config['tiles-url'])
+        self.specs_url = "{}:{}/{}".format(self.config['api-host'], self.config['api-port'], self.config['tiles-specs-url'])
+
+    def spectral_map(self):
+        """ Return a dict of sensor bands keyed to their respective spectrum """
+        _spec_map = dict()
+        _map = {'thermal': 'toa -11', 'cfmask': '+cfmask -conf'}
+        for bnd in ('blue', 'green', 'red', 'nir', 'swir1', 'swir2'):
+            _map[bnd] = 'sr'
+
+        for spectra in _map:
+            url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=self.specs_url, spec=spectra, band=_map[spectra])
+            resp = requests.get(url).json()
+            _spec_map[spectra] = [i['ubid'] for i in resp]
+        return _spec_map
 
     def dtstr_to_ordinal(self, dtstr):
         """ Return ordinal from string formatted date"""
@@ -27,17 +42,17 @@ class Spark(object):
     def as_numpy_array(self, tile, specs_map):
         """ Return numpy array of tile data grouped by spectral map """
         spec    = specs_map[tile['ubid']]
-        np_type = cw.numpy_type_map[spec['data_type']]
+        np_type = self.config['numpy_type_map'][spec['data_type']]
         shape   = specs_map[spec['ubid']]['data_shape']
         buffer  = base64.b64decode(tile['data'])
         return np.frombuffer(buffer, np_type).reshape(*shape)
 
     def landsat_dataset(self, spectrum, x, y, t, ubid):
         """ Return stack of landsat data for a given ubid, x, y, and time-span """
-        specs     = requests.get(self.config['api-host']+'/landsat/tile-specs').json()
+        specs     = requests.get(self.specs_url).json()
         specs_map = dict([[spec['ubid'], spec] for spec in specs])
         query     = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
-        tiles     = requests.get(self.config['api-host']+'/landsat/tiles', params=query).json()
+        tiles     = requests.get(self.tiles_url, params=query).json()
         rasters   = xr.DataArray([self.as_numpy_array(tile, specs_map) for tile in tiles])
 
         ds = xr.Dataset()
@@ -52,7 +67,7 @@ class Spark(object):
     def rainbow(self, x, y, t):
         """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
         ds = xr.Dataset()
-        for (spectrum, ubids) in cw.spectral_map(self.config).items():
+        for (spectrum, ubids) in self.spectral_map().items():
             for ubid in ubids:
                 band = self.landsat_dataset(spectrum, x, y, t, ubid)
                 if band:
