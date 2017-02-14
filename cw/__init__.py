@@ -46,7 +46,14 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
 
 
 def send(cfg, message):
-    return messaging.send(cfg, message)
+    conn = None
+    try:
+        conn = messaging.open_connection()
+        return messaging.send(cfg, message, conn)
+    except Exception as e:
+        pass
+    finally:
+        messaging.close_connection(conn)
 
 
 def listen(cfg, callback):
@@ -63,6 +70,7 @@ def launch_task(cfg, msg_body):
 
 def callback(cfg):
     def handler(ch, method, properties, body):
+        conn = None
         try:
             logger.info("Body type:{}".format(type(body.decode('utf-8'))))
             logger.info("Launching task for {}".format(body))
@@ -71,6 +79,6 @@ def callback(cfg):
             for result in results:
                 logger.info(send(cfg, json.dumps(result)))
         except Exception as e:
-            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body.decode('utf-8'), e))
+            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body.decode('utf-8'),
 
     return handler

@@ -1,6 +1,5 @@
 import pika
 
-
 class MessagingException(Exception):
     pass
 
@@ -42,11 +41,9 @@ def listen(cfg, callback_handler):
         close_connection(conn)
 
 
-def send(cfg, message):
-    conn = None
+def send(cfg, message, connection):
     try:
-        conn = open_connection(cfg)
-        channel = conn.channel()
+        channel = connection.channel()
         return channel.basic_publish(exchange=cfg['rabbit-exchange'],
                                      routing_key=cfg['rabbit-result-routing-key'],
                                      body=message,
@@ -56,4 +53,4 @@ def send(cfg, message):
     except Exception as e:
         raise MessagingException("Exception sending message:{}".format(e))
     finally:
-        close_connection(conn)
+        close_connection(connection)
