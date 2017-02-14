@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import pika
 import numpy as np
 
 config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
@@ -45,3 +46,26 @@ logging.basicConfig(stream=sys.stdout,
                     format='%(asctime)s %(module)s::%(funcName)-20s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger('lcw')
+
+
+class ChangeWorkerException(Exception):
+    pass
+
+
+def open_connection():
+    try:
+        return pika.BlockingConnection(
+            pika.ConnectionParameters(host=config['rabbit-host'],
+                                      port=config['rabbit-port'],
+                                      ssl=config['rabbit-ssl']))
+    except Exception as e:
+        raise ChangeWorkerException("problem establishing rabbitmq connection: {}".format(e))
+
+
+def close_connection(conn):
+    if conn is not None and conn.is_open:
+        try:
+            conn.close()
+        except Exception as e:
+            logger.error("Problem closing rabbitmq connection: {}".format(e))
+    return True

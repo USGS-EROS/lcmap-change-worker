@@ -1,36 +1,13 @@
 import pika
-from .app import logger
 
 
 class MessagingException(Exception):
     pass
 
 
-def open_connection(cfg):
+def listen(cfg, callback_handler, conn):
     try:
-        return pika.BlockingConnection(
-            pika.ConnectionParameters(host=cfg['rabbit-host'],
-                                      port=cfg['rabbit-port'],
-                                      ssl=cfg['rabbit-ssl']))
-    except Exception as e:
-        raise MessagingException("problem establishing rabbitmq connection: {}".format(e))
-
-
-def close_connection(conn):
-    if conn is not None and conn.is_open:
-        try:
-            conn.close()
-        except Exception as e:
-            logger.error("Problem closing rabbitmq connection: {}".format(e))
-    return True
-
-
-def listen(cfg, callback_handler):
-    conn = None
-    try:
-        conn = open_connection(cfg)
         channel = conn.channel()
-
         # This needs to be manual ack'ing, research and make sure
         # otherwise we'll get multiple deliveries.
         channel.basic_consume(callback_handler,
@@ -39,8 +16,6 @@ def listen(cfg, callback_handler):
         channel.start_consuming()
     except Exception as e:
         raise MessagingException("Exception in message listener:{}".format(e))
-    finally:
-        close_connection(conn)
 
 
 def send(cfg, message, connection):
@@ -54,5 +29,3 @@ def send(cfg, message, connection):
                                      ))
     except Exception as e:
         raise MessagingException("Exception sending message:{}".format(e))
-    finally:
-        close_connection(connection)

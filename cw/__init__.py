@@ -4,20 +4,16 @@ from . import spark
 from .app import logger
 
 
-def send(cfg, message):
-    conn = None
+def send(cfg, message, connection):
     try:
-        conn = messaging.open_connection(cfg)
-        return messaging.send(cfg, message, conn)
+        return messaging.send(cfg, message, connection)
     except Exception as e:
         logger.error('Change-Worker message queue send error: {}'.format(e))
-    finally:
-        messaging.close_connection(conn)
 
 
-def listen(cfg, callback):
+def listen(cfg, callback, conn):
     try:
-        messaging.listen(cfg, callback)
+        messaging.listen(cfg, callback, conn)
     except Exception as e:
         logger.error('Change-Worker message queue listener error: {}'.format(e))
 
@@ -27,7 +23,7 @@ def launch_task(cfg, msg_body):
     return spark.run(cfg, msg_body)
 
 
-def callback(cfg):
+def callback(cfg, connection):
     def handler(ch, method, properties, body):
         try:
             logger.info("Body type:{}".format(type(body.decode('utf-8'))))
@@ -35,7 +31,7 @@ def callback(cfg):
             results = launch_task(cfg, json.loads(body.decode('utf-8')))
             logger.info("Now returning results of type:{}".format(type(results)))
             for result in results:
-                logger.info(send(cfg, json.dumps(result)))
+                logger.info(send(cfg, json.dumps(result), connection))
         except Exception as e:
             logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body.decode('utf-8'), e))
 
