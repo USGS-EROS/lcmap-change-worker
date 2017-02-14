@@ -1,5 +1,5 @@
 import pika
-from cw import logger
+from .app import logger
 
 
 class MessagingException(Exception):

@@ -8,7 +8,8 @@ import requests
 import xarray as xr
 import pandas as pd
 from datetime import datetime
-from cw import logger
+
+from .app import logger
 
 
 class SparkException(Exception):
