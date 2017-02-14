@@ -40,7 +40,14 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
 
 
 def send(cfg, message):
-    return messaging.send(cfg, message)
+    conn = None
+    try:
+        conn = messaging.open_connection()
+        return messaging.send(cfg, message, conn)
+    except Exception as e:
+        pass
+    finally:
+        messaging.close_connection(conn)
 
 def listen(cfg, callback):
     messaging.listen(cfg, callback)
@@ -51,16 +58,18 @@ def launch_task(cfg, msg_body):
 
 def callback(cfg):
     def handler(ch, method, properties, body):
+        conn = None
         try:
-            print("Body type:{}".format(type(body.decode('utf-8'))))
+            conn = messaging.open_connection()
+            # print("Body type:{}".format(type(body.decode('utf-8'))))
             print("Launching task for {}".format(body))
             results = launch_task(cfg, json.loads(body.decode('utf-8')))
-            print("Now returning results of type:{}".format(type(results)))
+            # print("Returning results of type:{}".format(type(results)))
             for result in results:
                 if type(result) is dict:
                     # right now, dict type indicates successful execution.
                     # results may not be valid though
-                    print(send(cfg, json.dumps(result)))
+                    print(send(cfg, json.dumps(result), conn))
                 else:
                     # not successful, do something with this error like send it to
                     # an error queue or logfile.  print for the moment.
@@ -69,5 +78,7 @@ def callback(cfg):
         except Exception as e:
             print("Exception message: {}".format(e))
             traceback.print_exc(file=sys.stdout)
+        finally:
+            messaging.close_connection(conn)
 
     return handler

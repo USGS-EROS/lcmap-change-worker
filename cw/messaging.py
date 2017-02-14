@@ -1,7 +1,7 @@
 import cw
 import pika
 
-def open_connection (cfg):
+def open_connection(cfg):
     return pika.BlockingConnection(
         pika.ConnectionParameters(host=cfg['rabbit-host'],
                                   port=cfg['rabbit-port'],
@@ -34,11 +34,9 @@ def listen(cfg, callback_handler):
     finally:
         close_connection(conn)
 
-def send(cfg, message):
-    conn = None
+def send(cfg, message, connection):
     try:
-        conn = open_connection(cfg)
-        channel = conn.channel()
+        channel = connection.channel()
         return channel.basic_publish(exchange=cfg['rabbit-exchange'],
                                      routing_key=cfg['rabbit-result-routing-key'],
                                      body=message,
@@ -49,4 +47,4 @@ def send(cfg, message):
         print("Exception sending message:{}".format(e))
         raise e
     finally:
-        close_connection(conn)
+        pass
