@@ -7,8 +7,8 @@ import numpy as np
 import requests
 import xarray as xr
 import pandas as pd
-import cw
 from datetime import datetime
+from .logger import logger
 
 
 class SparkException(Exception):
@@ -28,10 +28,14 @@ class Spark(object):
         for bnd in ('blue', 'green', 'red', 'nir', 'swir1', 'swir2'):
             _map[bnd] = 'sr'
 
-        for spectra in _map:
-            url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=self.specs_url, spec=spectra, band=_map[spectra])
-            resp = requests.get(url).json()
-            _spec_map[spectra] = [i['ubid'] for i in resp]
+        try:
+            for spectra in _map:
+                url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=self.specs_url, spec=spectra, band=_map[spectra])
+                resp = requests.get(url).json()
+                _spec_map[spectra] = [i['ubid'] for i in resp]
+        except Exception as e:
+            raise SparkException("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(self.specs_url, e))
+
         return _spec_map
 
     def dtstr_to_ordinal(self, dtstr):
@@ -41,18 +45,27 @@ class Spark(object):
 
     def as_numpy_array(self, tile, specs_map):
         """ Return numpy array of tile data grouped by spectral map """
-        spec    = specs_map[tile['ubid']]
-        np_type = self.config['numpy_type_map'][spec['data_type']]
-        shape   = specs_map[spec['ubid']]['data_shape']
-        buffer  = base64.b64decode(tile['data'])
+        try:
+            spec    = specs_map[tile['ubid']]
+            np_type = self.config['numpy_type_map'][spec['data_type']]
+            shape   = specs_map[spec['ubid']]['data_shape']
+            buffer  = base64.b64decode(tile['data'])
+        except KeyError as e:
+            raise SparkException("as_numpy_array inputs missing expected keys: {}".format(e))
+
         return np.frombuffer(buffer, np_type).reshape(*shape)
 
     def landsat_dataset(self, spectrum, x, y, t, ubid):
         """ Return stack of landsat data for a given ubid, x, y, and time-span """
-        specs     = requests.get(self.specs_url).json()
+        try:
+            params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
+            specs = requests.get(self.specs_url).json()
+            tiles = requests.get(self.tiles_url, params=params).json()
+        except Exception as e:
+            raise SparkException("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
+                                 "exception: {}".format(self.specs_url, self.tiles_url, params, e))
+
         specs_map = dict([[spec['ubid'], spec] for spec in specs])
-        query     = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
-        tiles     = requests.get(self.tiles_url, params=query).json()
         rasters   = xr.DataArray([self.as_numpy_array(tile, specs_map) for tile in tiles])
 
         ds = xr.Dataset()
@@ -76,15 +89,18 @@ class Spark(object):
 
     def detect(self, rainbow, x, y):
         """ Return results of ccd.detect for a given stack of data at a particular x and y """
-        return ccd.detect(blues=np.array(rainbow['blue'].values[:, x, y]),
-                          greens=np.array(rainbow['green'].values[:, x, y]),
-                          reds=np.array(rainbow['red'].values[:, x, y]),
-                          nirs=np.array(rainbow['nir'].values[:, x, y]),
-                          swir1s=np.array(rainbow['swir1'].values[:, x, y]),
-                          swir2s=np.array(rainbow['swir2'].values[:, x, y]),
-                          thermals=np.array(rainbow['thermal'].values[:, x, y]),
-                          quality=np.array(rainbow['cfmask'].values[:, x, y]),
-                          dates=list(rainbow['ordinal']))
+        try:
+            return ccd.detect(blues=np.array(rainbow['blue'].values[:, x, y]),
+                              greens=np.array(rainbow['green'].values[:, x, y]),
+                              reds=np.array(rainbow['red'].values[:, x, y]),
+                              nirs=np.array(rainbow['nir'].values[:, x, y]),
+                              swir1s=np.array(rainbow['swir1'].values[:, x, y]),
+                              swir2s=np.array(rainbow['swir2'].values[:, x, y]),
+                              thermals=np.array(rainbow['thermal'].values[:, x, y]),
+                              quality=np.array(rainbow['cfmask'].values[:, x, y]),
+                              dates=list(rainbow['ordinal']))
+        except Exception as e:
+            raise SparkException(e)
 
     def run(self, input_d):
         """
@@ -92,10 +108,13 @@ class Spark(object):
         return results of ccd.detect along with other details necessary for storing
         results in a data warehouse
         """
-        print("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
+        logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
+        try:
+            dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
+            tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
+        except KeyError as e:
+            raise SparkException("input for spark.run missing expected key values: {}".format(e))
 
-        dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
-        tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
         rainbow = self.rainbow(tile_x, tile_y, dates)
 
         # hard coding dimensions for the moment,
@@ -109,17 +128,21 @@ class Spark(object):
                 px, py = (30, -30)
                 xx = tile_x + (x % tx) * px
                 yy = tile_y + math.floor(y / ty) * py
-                # results.keys(): algorithm, change_models, procedure, processing_mask,
-                results = self.detect(rainbow, x, y)
 
                 outgoing = dict()
-                outgoing['result'] = str(results)
+                try:
+                    # results.keys(): algorithm, change_models, procedure, processing_mask,
+                    results = self.detect(rainbow, x, y)
+                    outgoing['result'] = str(results)
+                    outgoing['result_ok'] = True
+                except SparkException as e:
+                    logger.error("Exception running ccd.detect: {}".format(e))
+                    outgoing['result'] = ''
+                    outgoing['result_ok'] = False
+
                 outgoing['x'], outgoing['y'] = xx, yy
                 outgoing['algorithm'] = results['algorithm']
                 outgoing['result_md5'] = hashlib.md5("{}".format(results).encode('utf-8')).hexdigest()
-                # somehow determine if the result is ok or not.
-                # all True for the moment
-                outgoing['result_ok'] = True
                 outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
                 outgoing['inputs_md5'] = 'not implemented'
                 yield outgoing

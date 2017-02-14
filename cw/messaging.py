@@ -1,11 +1,18 @@
 import pika
 
 
-def open_connection (cfg):
-    return pika.BlockingConnection(
-        pika.ConnectionParameters(host=cfg['rabbit-host'],
-                                  port=cfg['rabbit-port'],
-                                  ssl=cfg['rabbit-ssl']))
+class MessagingException(Exception):
+    pass
+
+
+def open_connection(cfg):
+    try:
+        return pika.BlockingConnection(
+            pika.ConnectionParameters(host=cfg['rabbit-host'],
+                                      port=cfg['rabbit-port'],
+                                      ssl=cfg['rabbit-ssl']))
+    except Exception as e:
+        raise MessagingException("problem establishing rabbitmq connection: {}".format(e))
 
 
 def close_connection(conn):
@@ -13,7 +20,7 @@ def close_connection(conn):
         try:
             conn.close()
         except Exception as e:
-            pass
+            raise MessagingException("Problem closing rabbitmq connection: {}".format(e))
     return True
 
 
@@ -24,15 +31,13 @@ def listen(cfg, callback_handler):
         channel = conn.channel()
 
         # This needs to be manual ack'ing, research and make sure
-        # otherwise we'll get multiiple deliveries.
+        # otherwise we'll get multiple deliveries.
         channel.basic_consume(callback_handler,
                               queue=cfg['rabbit-queue'],
                               no_ack=True)
         channel.start_consuming()
-
     except Exception as e:
-        print("Exception in message listener:{}".format(e))
-        raise e
+        raise MessagingException("Exception in message listener:{}".format(e))
     finally:
         close_connection(conn)
 
@@ -46,10 +51,9 @@ def send(cfg, message):
                                      routing_key=cfg['rabbit-result-routing-key'],
                                      body=message,
                                      properties=pika.BasicProperties(
-                                     delivery_mode = 2, # make message persistent
+                                     delivery_mode=2, # make message persistent
                                      ))
     except Exception as e:
-        print("Exception sending message:{}".format(e))
-        raise e
+        raise MessagingException("Exception sending message:{}".format(e))
     finally:
         close_connection(conn)

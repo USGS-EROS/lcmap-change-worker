@@ -4,17 +4,10 @@ import json
 import os
 import sys
 import traceback
-import requests
 import numpy as np
 from . import messaging
 from . import spark
-
-#__format = '%(asctime)s %(module)s::%(funcName)-20s - %(message)s'
-#logging.basicConfig(stream=sys.stdout,
-#                    level=logging.DEBUG,
-#                    format=__format,
-#                    datefmt='%Y-%m-%d %H:%M:%S')
-#logger = logging.getLogger('lcw')
+from .logger import logger
 
 config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
           'rabbit-port': int(os.getenv('LCW_RABBIT_PORT', 5672)),
@@ -52,14 +45,15 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
           }
 
 
-
-
 def send(cfg, message):
     return messaging.send(cfg, message)
 
 
 def listen(cfg, callback):
-    messaging.listen(cfg, callback)
+    try:
+        messaging.listen(cfg, callback)
+    except Exception as e:
+        logger.error('Change-Worker message queue listener error: {}'.format(e))
 
 
 def launch_task(cfg, msg_body):
@@ -70,22 +64,13 @@ def launch_task(cfg, msg_body):
 def callback(cfg):
     def handler(ch, method, properties, body):
         try:
-            print("Body type:{}".format(type(body.decode('utf-8'))))
-            print("Launching task for {}".format(body))
+            logger.info("Body type:{}".format(type(body.decode('utf-8'))))
+            logger.info("Launching task for {}".format(body))
             results = launch_task(cfg, json.loads(body.decode('utf-8')))
-            print("Now returning results of type:{}".format(type(results)))
+            logger.info("Now returning results of type:{}".format(type(results)))
             for result in results:
-                if type(result) is dict:
-                    # right now, dict type indicates successful execution.
-                    # results may not be valid though
-                    print(send(cfg, json.dumps(result)))
-                else:
-                    # not successful, do something with this error like send it to
-                    # an error queue or logfile.  print for the moment.
-                    print("Execution error:{}".format(result))
-                    traceback.print_exc(file=sys.stdout)
+                logger.info(send(cfg, json.dumps(result)))
         except Exception as e:
-            print("Exception message: {}".format(e))
-            traceback.print_exc(file=sys.stdout)
+            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body.decode('utf-8'), e))
 
     return handler
