@@ -56,7 +56,7 @@ def send(cfg, message):
     except Exception as e:
         logger.error('Change-Worker message queue send error: {}'.format(e))
     finally:
-        messaging.close_connection(conn)
+        messaging.close_connection(conn, cfg)
 
 
 def listen(cfg, callback):
