@@ -43,7 +43,7 @@ def send(cfg, message):
     conn = None
     try:
         conn = messaging.open_connection()
-        return messaging.send(cfg, message)
+        return messaging.send(cfg, message, conn)
     except Exception as e:
         pass
     finally:
