@@ -1,5 +1,7 @@
 import pika
 
+from .logger import logger
+
 class MessagingException(Exception):
     pass
 
@@ -19,7 +21,7 @@ def close_connection(conn):
         try:
             conn.close()
         except Exception as e:
-            raise MessagingException("Problem closing rabbitmq connection: {}".format(e))
+            logger.error("Problem closing rabbitmq connection: {}".format(e))
     return True
 
 

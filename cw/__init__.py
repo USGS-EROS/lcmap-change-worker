@@ -7,7 +7,7 @@ import traceback
 import numpy as np
 from . import messaging
 from . import spark
-from .logger import logger
+from .logger import get_logger
 
 config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
           'rabbit-port': int(os.getenv('LCW_RABBIT_PORT', 5672)),
@@ -19,6 +19,7 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
           'api-port': os.getenv('LCW_API_PORT', '5678'),
           'tile-specs-url': os.getenv('LCW_SPECS_URL', '/tile-specs'),
           'tiles-url': os.getenv('LCW_TILES_URL', '/tiles'),
+          'log-level': os.getenv('LCW_LOG_LEVEL', 10),
           'ubid_band_dict': {
               'tm': {'red': 'band3',
                      'blue': 'band1',
@@ -44,14 +45,16 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
            }
           }
 
+logger = get_logger(config['log-level'])
+
 
 def send(cfg, message):
     conn = None
     try:
-        conn = messaging.open_connection()
+        conn = messaging.open_connection(cfg)
         return messaging.send(cfg, message, conn)
     except Exception as e:
-        pass
+        logger.error('Change-Worker message queue send error: {}'.format(e))
     finally:
         messaging.close_connection(conn)
 
@@ -79,6 +82,6 @@ def callback(cfg):
             for result in results:
                 logger.info(send(cfg, json.dumps(result)))
         except Exception as e:
-            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body.decode('utf-8'),
+            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body.decode('utf-8')))
 
     return handler
