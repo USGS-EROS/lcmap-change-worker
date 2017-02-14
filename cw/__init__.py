@@ -1,14 +1,11 @@
+import sys
 import codecs
 import logging
 import json
 import os
-import sys
-import traceback
 import numpy as np
 from . import messaging
 from . import spark
-from .logger import get_logger
-
 config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
           'rabbit-port': int(os.getenv('LCW_RABBIT_PORT', 5672)),
           'rabbit-queue': os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changes.worker'),
@@ -45,7 +42,11 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
            }
           }
 
-logger = get_logger(config['log-level'])
+logging.basicConfig(stream=sys.stdout,
+                    level=config['log-level'],
+                    format='%(asctime)s %(module)s::%(funcName)-20s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger('lcw')
 
 
 def send(cfg, message):
@@ -73,7 +74,6 @@ def launch_task(cfg, msg_body):
 
 def callback(cfg):
     def handler(ch, method, properties, body):
-        conn = None
         try:
             logger.info("Body type:{}".format(type(body.decode('utf-8'))))
             logger.info("Launching task for {}".format(body))

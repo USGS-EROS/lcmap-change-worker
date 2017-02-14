@@ -8,7 +8,7 @@ import requests
 import xarray as xr
 import pandas as pd
 from datetime import datetime
-from .logger import get_logger
+from cw import logger
 
 
 class SparkException(Exception):
@@ -20,7 +20,6 @@ class Spark(object):
         self.config = config
         self.tiles_url = "{}:{}/{}".format(self.config['api-host'], self.config['api-port'], self.config['tiles-url'])
         self.specs_url = "{}:{}/{}".format(self.config['api-host'], self.config['api-port'], self.config['tiles-specs-url'])
-        self.logger = get_logger(config['log-level'])
 
     def spectral_map(self):
         """ Return a dict of sensor bands keyed to their respective spectrum """
@@ -109,7 +108,7 @@ class Spark(object):
         return results of ccd.detect along with other details necessary for storing
         results in a data warehouse
         """
-        self.logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
+        logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
         try:
             dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
             tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
@@ -137,7 +136,7 @@ class Spark(object):
                     outgoing['result'] = str(results)
                     outgoing['result_ok'] = True
                 except SparkException as e:
-                    self.logger.error("Exception running ccd.detect: {}".format(e))
+                    logger.error("Exception running ccd.detect: {}".format(e))
                     outgoing['result'] = ''
                     outgoing['result_ok'] = False
 

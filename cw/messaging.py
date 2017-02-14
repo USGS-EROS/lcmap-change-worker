@@ -1,6 +1,5 @@
 import pika
-
-from .logger import get_logger
+from cw import logger
 
 
 class MessagingException(Exception):
@@ -17,8 +16,7 @@ def open_connection(cfg):
         raise MessagingException("problem establishing rabbitmq connection: {}".format(e))
 
 
-def close_connection(conn, cfg):
-    logger = get_logger(cfg['log-level'])
+def close_connection(conn):
     if conn is not None and conn.is_open:
         try:
             conn.close()
