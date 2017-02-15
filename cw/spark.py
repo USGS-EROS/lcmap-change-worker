@@ -19,10 +19,8 @@ class SparkException(Exception):
 class Spark(object):
     def __init__(self, config):
         self.config = config
-        self.tiles_url = "{}:{}/{}".format(self.config['api-host'], self.config['api-port'], self.config['tiles-url'])
-        self.specs_url = "{}:{}/{}".format(self.config['api-host'], self.config['api-port'], self.config['tiles-specs-url'])
 
-    def spectral_map(self):
+    def spectral_map(self, specs_url):
         """ Return a dict of sensor bands keyed to their respective spectrum """
         _spec_map = dict()
         _map = {'thermal': 'toa -11', 'cfmask': '+cfmask -conf'}
@@ -31,11 +29,11 @@ class Spark(object):
 
         try:
             for spectra in _map:
-                url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=self.specs_url, spec=spectra, band=_map[spectra])
+                url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
                 resp = requests.get(url).json()
                 _spec_map[spectra] = [i['ubid'] for i in resp]
         except Exception as e:
-            raise SparkException("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(self.specs_url, e))
+            raise SparkException("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
 
         return _spec_map
 
@@ -56,15 +54,15 @@ class Spark(object):
 
         return np.frombuffer(buffer, np_type).reshape(*shape)
 
-    def landsat_dataset(self, spectrum, x, y, t, ubid):
+    def landsat_dataset(self, spectrum, x, y, t, ubid, specs_url, tiles_url):
         """ Return stack of landsat data for a given ubid, x, y, and time-span """
+        params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
         try:
-            params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
-            specs = requests.get(self.specs_url).json()
-            tiles = requests.get(self.tiles_url, params=params).json()
+            specs = requests.get(specs_url).json()
+            tiles = requests.get(tiles_url, params=params).json()
         except Exception as e:
             raise SparkException("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
-                                 "exception: {}".format(self.specs_url, self.tiles_url, params, e))
+                                 "exception: {}".format(specs_url, tiles_url, params, e))
 
         specs_map = dict([[spec['ubid'], spec] for spec in specs])
         rasters   = xr.DataArray([self.as_numpy_array(tile, specs_map) for tile in tiles])
@@ -78,14 +76,15 @@ class Spark(object):
         ds.coords['ordinal']  = (('t'), [self.dtstr_to_ordinal(t['acquired']) for t in tiles])
         return ds
 
-    def rainbow(self, x, y, t):
+    def rainbow(self, x, y, t, specs_url, tiles_url, requested_ubids):
         """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
         ds = xr.Dataset()
-        for (spectrum, ubids) in self.spectral_map().items():
+        for (spectrum, ubids) in self.spectral_map(specs_url).items():
             for ubid in ubids:
-                band = self.landsat_dataset(spectrum, x, y, t, ubid)
-                if band:
-                    ds = ds.merge(band)
+                if ubid in requested_ubids:
+                    band = self.landsat_dataset(spectrum, x, y, t, ubid, specs_url, tiles_url)
+                    if band:
+                        ds = ds.merge(band)
         return ds
 
     def detect(self, rainbow, x, y):
@@ -113,10 +112,14 @@ class Spark(object):
         try:
             dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
             tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
+            tiles_url = input_d['inputs_url'].split('?')[0]
+            specs_url = tiles_url.replace('/tiles', '/tile-specs')
+            querystr_list = input_d['inputs_url'].split('?')[1].split('&')
+            requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
         except KeyError as e:
             raise SparkException("input for spark.run missing expected key values: {}".format(e))
 
-        rainbow = self.rainbow(tile_x, tile_y, dates)
+        rainbow = self.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
 
         # hard coding dimensions for the moment,
         # it should come from a tile-spec query
