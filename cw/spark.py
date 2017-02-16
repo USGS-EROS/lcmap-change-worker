@@ -31,7 +31,8 @@ class Spark(object):
             for spectra in _map:
                 url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
                 resp = requests.get(url).json()
-                _spec_map[spectra] = [i['ubid'] for i in resp]
+                # value needs to be a list, make it unique using set()
+                _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
         except Exception as e:
             raise SparkException("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
 
@@ -64,7 +65,17 @@ class Spark(object):
             raise SparkException("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
                                  "exception: {}".format(specs_url, tiles_url, params, e))
 
-        specs_map = dict([[spec['ubid'], spec] for spec in specs])
+        # If no tiles were returned, raise exception
+        if not tiles:
+            raise SparkException("No tile data for url: {}, params: {}\nCannot proceed".format(tiles_url, params))
+
+        # specs may not be unique, deal with it
+        uniq_specs = []
+        for spec in specs:
+            if spec not in uniq_specs:
+                uniq_specs.append(spec)
+
+        specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
         rasters   = xr.DataArray([self.as_numpy_array(tile, specs_map) for tile in tiles])
 
         ds = xr.Dataset()
