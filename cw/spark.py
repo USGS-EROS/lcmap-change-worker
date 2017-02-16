@@ -1,175 +1,156 @@
 #!/usr/bin/env python
-import ast
 import base64
 import ccd
 import hashlib
-import os
+import math
 import numpy as np
-import sys
 import requests
-import cw
-from glob import glob
+import xarray as xr
+import pandas as pd
 from datetime import datetime
+
+from .app import logger
+
 
 class SparkException(Exception):
     pass
 
+
 class Spark(object):
     def __init__(self, config):
         self.config = config
-        ubids = 'LANDSAT_7/ETM/sr_band1&ubid=LANDSAT_7/ETM/sr_band2&ubid=LANDSAT_7/ETM/sr_band4&ubid=LANDSAT_7/ETM/sr_band5&ubid=LANDSAT_7/ETM/sr_band7&ubid=LANDSAT_7/ETM/cfmask&ubid=LANDSAT_7/ETM/sr_band3&ubid=LANDSAT_7/ETM/toa_band6'
-        self.ubids_list = ubids.split('&ubid=')
 
-    def sort_band_data(self, band, field):
-        return sorted(band, key=lambda x: x[field])
+    def spectral_map(self, specs_url):
+        """ Return a dict of sensor bands keyed to their respective spectrum """
+        _spec_map = dict()
+        _map = {'thermal': 'toa -11', 'cfmask': '+cfmask -conf'}
+        for bnd in ('blue', 'green', 'red', 'nir', 'swir1', 'swir2'):
+            _map[bnd] = 'sr'
 
-    def b64_to_bytearray(self, data):
-        return np.frombuffer(base64.b64decode(data), np.int16)
+        try:
+            for spectra in _map:
+                url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
+                resp = requests.get(url).json()
+                _spec_map[spectra] = [i['ubid'] for i in resp]
+        except Exception as e:
+            raise SparkException("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
+
+        return _spec_map
 
     def dtstr_to_ordinal(self, dtstr):
+        """ Return ordinal from string formatted date"""
         _dt = datetime.strptime(dtstr, '%Y-%m-%dT%H:%M:%SZ')
         return _dt.toordinal()
 
-    def collect_data(self, band_group, json_data):
-        _blist = "band2 band3 band4 band5 band6 band7 cfmask"
-        band_list = "band1 " + _blist if band_group is 'tm' else "band10 " + _blist
-        for b in band_list.split(" "):
-            vars()[b] = []
-        band_bucket = []
-        for item in json_data:
-            which_band = item['ubid'][-6:].replace("_", "")
-            band_bucket.append(which_band)
-            vars()[which_band].append(item)
-        valid_sources = set([i['source'] for i in vars()['band2']]) & set([i['source'] for i in vars()['cfmask']])
-        for bucket in band_list.split(" "):
-            _orig = vars()[bucket]
-            vars()[bucket+'_clean'] = [item for item in _orig if item['source'] in valid_sources]
-        for bucket in band_list.split(" "):
-            _sorted = vars()[bucket+'_sorted'] = self.sort_band_data(vars()[bucket+'_clean'], 'acquired')
-            vars()[bucket+'_bytes'] = [self.b64_to_bytearray(item['data']) for item in _sorted]
-        dates = [self.dtstr_to_ordinal(i['acquired']) for i in vars()['band2_sorted']]
-        mapping = self.config['ubid_band_dict'][band_group]
-        for band in "red green blue nirs swirs1 swirs2 thermals qas".split(" "):
-            vars()[band+'_array'] = np.array(vars()[mapping[band] + '_bytes'])
-            print("{}: len {}".format(band, len(vars()[band+'_array'])))
-        rows = len(dates)  #282
-        cells = 10000      # per tile, 100x100
-        output = []
+    def as_numpy_array(self, tile, specs_map):
+        """ Return numpy array of tile data grouped by spectral map """
         try:
-            for pixel in range(0, cells):
-                lower = pixel
-                upper = pixel + 1
-                _od = dict()
-                _od[pixel] = {'dates': dates,
-                              'red': vars()['red_array'][0:rows, lower:upper],
-                              'green': vars()['green_array'][0:rows, lower:upper],
-                              'blue': vars()['blue_array'][0:rows, lower:upper],
-                              'nirs': vars()['nirs_array'][0:rows, lower:upper],
-                              'swirs1': vars()['swirs1_array'][0:rows, lower:upper],
-                              'swirs2': vars()['swirs2_array'][0:rows, lower:upper],
-                              'thermals': vars()['thermals_array'][0:rows, lower:upper],
-                              'qas': vars()['qas_array'][0:rows, lower:upper]}
-                output.append(_od)
-        except IndexError as e:
-            output = "IndexError for returned data: {}".format(e.message)
+            spec    = specs_map[tile['ubid']]
+            np_type = self.config['numpy_type_map'][spec['data_type']]
+            shape   = specs_map[spec['ubid']]['data_shape']
+            buffer  = base64.b64decode(tile['data'])
+        except KeyError as e:
+            raise SparkException("as_numpy_array inputs missing expected keys: {}".format(e))
 
-        print("returning {} output items from collect_data".format(len(output)))
-        return output
+        return np.frombuffer(buffer, np_type).reshape(*shape)
 
-    def run_pyccd(self, datad):
-        def np_to_list(_d):
-            _x = [i[0] for i in _d]
-            return np.array(_x)
+    def landsat_dataset(self, spectrum, x, y, t, ubid, specs_url, tiles_url):
+        """ Return stack of landsat data for a given ubid, x, y, and time-span """
+        params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
+        try:
+            specs = requests.get(specs_url).json()
+            tiles = requests.get(tiles_url, params=params).json()
+        except Exception as e:
+            raise SparkException("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
+                                 "exception: {}".format(specs_url, tiles_url, params, e))
 
-        data = list(datad.values())[0]
-        print ("data is: {}".format(type(data)))
-        results = ccd.detect(data['dates'],
-                             np_to_list(data['blue']),
-                             np_to_list(data['green']),
-                             np_to_list(data['red']),
-                             np_to_list(data['nirs']),
-                             np_to_list(data['swirs1']),
-                             np_to_list(data['swirs2']),
-                             np_to_list(data['thermals']),
-                             np_to_list(data['qas']))
-        return results
+        specs_map = dict([[spec['ubid'], spec] for spec in specs])
+        rasters   = xr.DataArray([self.as_numpy_array(tile, specs_map) for tile in tiles])
 
-    def pixel_xy(self, index, tilex, tiley, dim=100):
-        # if index is 565, tilex is 123, tiley is 330, xdim is 100, ydim is 100
-        row = index / dim
-        col = index - row * dim
-        return {'y': tiley+row, 'x': tilex+col}
+        ds = xr.Dataset()
+        ds[spectrum]          = (('t', 'x', 'y'), rasters)
+        ds[spectrum].attrs    = {'color': spectrum}
+        ds.coords['t']        = (('t'), pd.to_datetime([t['acquired'] for t in tiles]))
+        ds.coords['source']   = (('t'), [t['source'] for t in tiles])
+        ds.coords['acquired'] = (('t'), [t['acquired'] for t in tiles])
+        ds.coords['ordinal']  = (('t'), [self.dtstr_to_ordinal(t['acquired']) for t in tiles])
+        return ds
+
+    def rainbow(self, x, y, t, specs_url, tiles_url, requested_ubids):
+        """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
+        ds = xr.Dataset()
+        for (spectrum, ubids) in self.spectral_map(specs_url).items():
+            for ubid in ubids:
+                if ubid in requested_ubids:
+                    band = self.landsat_dataset(spectrum, x, y, t, ubid, specs_url, tiles_url)
+                    if band:
+                        ds = ds.merge(band)
+        return ds
+
+    def detect(self, rainbow, x, y):
+        """ Return results of ccd.detect for a given stack of data at a particular x and y """
+        try:
+            return ccd.detect(blues=np.array(rainbow['blue'].values[:, x, y]),
+                              greens=np.array(rainbow['green'].values[:, x, y]),
+                              reds=np.array(rainbow['red'].values[:, x, y]),
+                              nirs=np.array(rainbow['nir'].values[:, x, y]),
+                              swir1s=np.array(rainbow['swir1'].values[:, x, y]),
+                              swir2s=np.array(rainbow['swir2'].values[:, x, y]),
+                              thermals=np.array(rainbow['thermal'].values[:, x, y]),
+                              quality=np.array(rainbow['cfmask'].values[:, x, y]),
+                              dates=list(rainbow['ordinal']))
+        except Exception as e:
+            raise SparkException(e)
 
     def run(self, input_d):
-        print("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
-        # url = "http://lcmap-test.cr.usgs.gov/landsat/tiles?x=-2013585&y=3095805&acquired=1982-01-01/2017-01-01&ubid="
+        """
+        Generator function. Given parameters of 'inputs_url', 'tile_x', & 'tile_y',
+        return results of ccd.detect along with other details necessary for storing
+        results in a data warehouse
+        """
+        logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
+        try:
+            dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
+            tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
+            tiles_url = input_d['inputs_url'].split('?')[0]
+            specs_url = tiles_url.replace('/tiles', '/tile-specs')
+            querystr_list = input_d['inputs_url'].split('?')[1].split('&')
+            requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
+        except KeyError as e:
+            raise SparkException("input for spark.run missing expected key values: {}".format(e))
 
-        resp = requests.get(input_d['inputs_url'])
-        if resp.status_code != 200:
-            resp = requests.get(input_d['inputs_url'])
+        rainbow = self.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
 
-        # data = list()
-        # for i in self.ubids_list:
-        #     print "attempting query of: {}".format(url+i)
-        #     resp = requests.get(url+i)
-        #     if resp.status_code != 200:
-        #         print "got a non-200: {}\ntrying again...".format(resp.status_code)
-        #         resp = requests.get(url+i)
-        #     print "len of resp.json() {}".format(len(resp.json()))
-        #     for d in resp.json():
-        #         data.append(d)
-
-        # band_group = 'oli' if 'OLI_TIRS' in url else 'tm'
-        band_group = 'oli' if 'OLI_TIRS' in input_d['inputs_url'] else 'tm'
-
-        # output = collect_data(band_group, tile_resp.json())
-        output = self.collect_data(band_group, resp.json())
-        print("Have data of type {}, ready to attempt pyccd.".format(type(output)))
-        # This block should be turned into a value that is returned
-        # from the call to run().  Sending/Receiving is a different
-        # responsibility than executing the tasks.
-        # HACK
-        if isinstance(output, str):
-            # gather other needed info, set result_ok to False, set result to
-            # output.  without x, y, algorithm then result cannot be saved
-            # by lcmap-changes
-            msg = "Query error:{}".format(output)
-            print(msg)
-            # be more specific about this exception.  Create one for
-            # QueryFailedException or whatevs.
-            raise Exception(msg)
-        else:
-            print("Data is valid to run pyccd. Proceeding.")
-            for item in output:
-                # item is a dict, keyed by pixel index {0: {dates: , green: , yada...}
-                print("item.keys:{}".format(list(item)))
-                #pixel_index = item.keys()[0]
-                pixel_index = list(item)[0]
-
-                # for the short term, consider using multiprocessing pool
-                # to run these in parallel
-                results = self.run_pyccd(item)
-                #print("Results type:{}".format(type(results)))
-                #print("Results:{}".format(results))
+        # hard coding dimensions for the moment,
+        # it should come from a tile-spec query
+        # {'data_shape': [100, 100], 'pixel_x': 30, 'pixel_y': -30}
+        # tile-spec query results should then be provided to self.detect()
+        dimrng = 100
+        for x in range(0, dimrng):
+            for y in range(0, dimrng):
+                tx, ty = (100, 100)
+                px, py = (30, -30)
+                xx = tile_x + (x % tx) * px
+                yy = tile_y + math.floor(y / ty) * py
 
                 outgoing = dict()
-                outgoing['result'] = str(results)
-                xy = self.pixel_xy(pixel_index, input_d['tile_x'], input_d['tile_y'])
-                outgoing['x'] = xy['x']
-                outgoing['y'] = xy['y']
-                outgoing['algorithm'] = input_d['algorithm']
-                outgoing['result_md5'] = hashlib.md5("{}".format(results).encode('utf-8')).hexdigest()
-                #outgoing['result_md5'] = hashlib.md5(   "{}".format(results) .hexdigest()
-                # somehow determine if the result is ok or not.
-                # all True for the moment
-                outgoing['result_ok'] = True
-                outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-                #outgoing['inputs_md5'] = hashlib.md5("{}".format(resp.json())).hexdigest()
-                outgoing['inputs_md5'] = 'not implemented'
+                try:
+                    # results.keys(): algorithm, change_models, procedure, processing_mask,
+                    results = self.detect(rainbow, x, y)
+                    outgoing['result'] = str(results)
+                    outgoing['result_ok'] = True
+                except SparkException as e:
+                    logger.error("Exception running ccd.detect: {}".format(e))
+                    outgoing['result'] = ''
+                    outgoing['result_ok'] = False
 
-                # act as a generator so results can be sent over messaging as they
-                # arrive
+                outgoing['x'], outgoing['y'] = xx, yy
+                outgoing['algorithm'] = results['algorithm']
+                outgoing['result_md5'] = hashlib.md5("{}".format(results).encode('utf-8')).hexdigest()
+                outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+                outgoing['inputs_md5'] = 'not implemented'
                 yield outgoing
+
 
 def run(config, indata):
     sprk = Spark(config)
