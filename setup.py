@@ -30,7 +30,7 @@ setup(
     description='Module for executing change detection and sending results',
     long_description=long_description,
 
-    maintainer='caustin-usgs'
+    maintainer='caustin-usgs',
     maintainer_email='clay.austin.ctr@usgs.gov'
 
     # The project's main homepage.
