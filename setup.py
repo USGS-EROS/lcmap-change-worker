@@ -30,6 +30,9 @@ setup(
     description='Module for executing change detection and sending results',
     long_description=long_description,
 
+    maintainer='caustin-usgs'
+    maintainer_email='clay.austin.ctr@usgs.gov'
+
     # The project's main homepage.
     url='https://github.com/usgs-eros/lcmap-change-worker',
 
@@ -38,7 +41,7 @@ setup(
     author_email='',
 
     # Choose your license
-    license='Unlicense',
+    license='Public Domain',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -51,7 +54,7 @@ setup(
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
         # Pick your license as you wish (should match "license" above)
-        'Unlicense',
+        'License :: Public Domain',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
