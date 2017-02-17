@@ -31,7 +31,7 @@ setup(
     long_description=long_description,
 
     maintainer='caustin-usgs',
-    maintainer_email='clay.austin.ctr@usgs.gov'
+    maintainer_email='clay.austin.ctr@usgs.gov',
 
     # The project's main homepage.
     url='https://github.com/usgs-eros/lcmap-change-worker',
