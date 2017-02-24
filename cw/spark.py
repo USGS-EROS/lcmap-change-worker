@@ -164,10 +164,9 @@ class Spark(object):
         dimrng = 100
         for x in range(0, dimrng):
             for y in range(0, dimrng):
-                tx, ty = (100, 100)
                 px, py = (30, -30)
-                xx = tile_x + (x % tx) * px
-                yy = tile_y + math.floor(y / ty) * py
+                xx = tile_x + (x * px)
+                yy = tile_y + (y * py)
 
                 outgoing = dict()
                 try:
