@@ -185,9 +185,9 @@ class Spark(object):
                 outgoing['result_md5'] = hashlib.md5(outgoing['result']).hexdigest()
                 outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
                 outgoing['inputs_md5'] = 'not implemented'
-                yield msgpack.packb(outgoing)
+                yield outgoing
 
 
 def run(config, indata):
     sprk = Spark(config)
-    return sprk.run(msgpack.unpackb(indata))
+    return sprk.run(indata)
