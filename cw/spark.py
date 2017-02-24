@@ -5,6 +5,7 @@ import hashlib
 import math
 import numpy as np
 import requests
+import msgpack
 import xarray as xr
 import pandas as pd
 from datetime import datetime
@@ -113,6 +114,30 @@ class Spark(object):
         except Exception as e:
             raise SparkException(e)
 
+    def simplify_objects(self, obj):
+        if isinstance(obj, np.bool_):
+            return bool(obj)
+        elif isinstance(obj, np.int64):
+            return int(obj)
+        elif isinstance(obj, tuple) and ('_asdict' in dir(obj)):
+            # looks like a namedtuple
+            _out = {}
+            objdict = obj._asdict()
+            for key in objdict.keys():
+                _out[key] = self.simplify_objects(objdict[key])
+            return _out
+        elif isinstance(obj, (list, np.ndarray, tuple)):
+            return [self.simplify_objects(i) for i in obj]
+        else:
+            # should be a serializable type
+            return obj
+
+    def simplify_detect_results(self, results):
+        output = dict()
+        for key in results.keys():
+            output[key] = self.simplify_objects(results[key])
+        return output
+
     def run(self, input_d):
         """
         Generator function. Given parameters of 'inputs_url', 'tile_x', & 'tile_y',
@@ -148,19 +173,19 @@ class Spark(object):
                 try:
                     # results.keys(): algorithm, change_models, procedure, processing_mask,
                     results = self.detect(rainbow, x, y)
-                    outgoing['result'] = str(results)
+                    outgoing['result'] = msgpack.packb(self.simplify_detect_results(results))
                     outgoing['result_ok'] = True
+                    outgoing['algorithm'] = results['algorithm']
                 except SparkException as e:
                     logger.error("Exception running ccd.detect: {}".format(e))
                     outgoing['result'] = ''
                     outgoing['result_ok'] = False
 
                 outgoing['x'], outgoing['y'] = xx, yy
-                outgoing['algorithm'] = results['algorithm']
-                outgoing['result_md5'] = hashlib.md5("{}".format(results).encode('utf-8')).hexdigest()
+                outgoing['result_md5'] = hashlib.md5(outgoing['result']).hexdigest()
                 outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
                 outgoing['inputs_md5'] = 'not implemented'
-                yield outgoing
+                yield msgpack.packb(outgoing)
 
 
 def run(config, indata):
