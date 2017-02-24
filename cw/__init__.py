@@ -28,10 +28,10 @@ def callback(cfg, connection):
         try:
             logger.info("Body type:{}".format(type(body.decode('utf-8'))))
             logger.info("Launching task for {}".format(body))
-            results = launch_task(cfg, json.loads(body.decode('utf-8')))
+            results = launch_task(cfg, body)
             logger.info("Now returning results of type:{}".format(type(results)))
             for result in results:
-                logger.info(send(cfg, json.dumps(result), connection))
+                logger.info(send(cfg, result, connection))
         except Exception as e:
             logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body.decode('utf-8'), e))
 

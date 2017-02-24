@@ -190,4 +190,4 @@ class Spark(object):
 
 def run(config, indata):
     sprk = Spark(config)
-    return sprk.run(indata)
+    return sprk.run(msgpack.unpackb(indata))
