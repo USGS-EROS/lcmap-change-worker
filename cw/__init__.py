@@ -23,11 +23,24 @@ def launch_task(cfg, msg_body):
     return spark.run(cfg, msg_body)
 
 
+def decode_body(body):
+    """ Convert keys and values unpacked as bytes to strings """
+    out = dict()
+    for k, v in body.items():
+        out_k, out_v = k, v
+        if isinstance(k, bytes):
+            out_k = k.decode('utf-8')
+        if isinstance(v, bytes):
+            out_v = v.decode('utf-8')
+        out[out_k] = out_v
+    return out
+
+
 def callback(cfg, connection):
     def handler(ch, method, properties, body):
         try:
             logger.info("Received message with packed body: {}".format(body))
-            unpacked_body = msgpack.unpackb(body)
+            unpacked_body = decode_body(msgpack.unpackb(body))
             logger.info("Launching task for unpacked body {}".format(unpacked_body))
             results = launch_task(cfg, unpacked_body)
             logger.info("Now returning results of type:{}".format(type(results)))
