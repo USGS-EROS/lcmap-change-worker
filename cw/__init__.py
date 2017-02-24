@@ -26,13 +26,13 @@ def launch_task(cfg, msg_body):
 def callback(cfg, connection):
     def handler(ch, method, properties, body):
         try:
-            logger.info("Body type:{}".format(type(body.decode('utf-8'))))
+            #logger.info("Body type:{}".format(type(body.decode('utf-8'))))
             logger.info("Launching task for {}".format(body))
             results = launch_task(cfg, body)
             logger.info("Now returning results of type:{}".format(type(results)))
             for result in results:
                 logger.info(send(cfg, result, connection))
         except Exception as e:
-            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body.decode('utf-8'), e))
+            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
 
     return handler
