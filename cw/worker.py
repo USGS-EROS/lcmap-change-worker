@@ -3,6 +3,7 @@ import base64
 import ccd
 import hashlib
 import math
+import msgpack
 import numpy as np
 import requests
 import json
@@ -12,9 +13,30 @@ from . import messaging
 from datetime import datetime
 import cw
 
+UBID_BAND_DICT = {
+    'tm': {'red': 'band3',
+           'blue': 'band1',
+           'green': 'band2',
+           'nirs': 'band4',
+           'swir1s': 'band5',
+           'swir2s': 'band7',
+           'thermals': 'band6',
+           'qas': 'cfmask'},
+    'oli': {'red': 'band4',
+            'blue': 'band2',
+            'green': 'band3',
+            'nirs': 'band5',
+            'swir1s': 'band6',
+            'swir2s': 'band7',
+            'thermals': 'band10',
+            'qas': 'cfmask'}
+}
+
+
+
 class Worker(object):
-    def __init__(self, config):
-        self.config = config
+    def __init__(self):
+        pass
 
     def spectral_map(self, specs_url):
         """ Return a dict of sensor bands keyed to their respective spectrum """
@@ -41,9 +63,15 @@ class Worker(object):
 
     def as_numpy_array(self, tile, specs_map):
         """ Return numpy array of tile data grouped by spectral map """
+        NUMPY_TYPES = {
+            'UINT8': np.uint8,
+            'UINT16': np.uint16,
+            'INT8': np.int8,
+            'INT16': np.int16
+        }
         try:
             spec    = specs_map[tile['ubid']]
-            np_type = self.config['numpy_type_map'][spec['data_type']]
+            np_type = NUMPY_TYPES[spec['data_type']]
             shape   = specs_map[spec['ubid']]['data_shape']
             buffer  = base64.b64decode(tile['data'])
         except KeyError as e:
@@ -193,7 +221,7 @@ def __decode_body(body):
         out[out_k] = out_v
     return out
 
-def callback(cfg, connection):
+def callback(connection, exchange, routing_key):
     def handler(ch, method, properties, body):
         try:
             cw.logger.debug("Received message with packed body: {}".format(body))
@@ -204,7 +232,7 @@ def callback(cfg, connection):
             for result in results:
                 packed_result = msgpack.packb(result)
                 cw.logger.debug("Delivering packed result: {}".format(packed_result))
-                cw.logger.info(messaging.send(cfg, packed_result, connection))
+                cw.logger.info(messaging.send(packed_result, connection, exchange, routing_key))
         except Exception as e:
             cw.logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
     return handler

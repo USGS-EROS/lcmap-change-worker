@@ -1,15 +1,20 @@
 from cw import callback
-from cw import config
 from cw import logger
 from cw import listen
 from cw import open_connection
 from cw import close_connection
+from cw import RABBIT_HOST
+from cw import RABBIT_PORT
+from cw import RABBIT_EXCHANGE
+from cw import RESULT_ROUTING_KEY
 
 def main():
     conn = None
     try:
-        conn = open_connection(config)
-        listen(config, callback(config, conn), conn)
+        conn = open_connection(RABBIT_HOST, RABBIT_PORT)
+        listen(callback(conn, RABBIT_EXCHANGE, RESULT_ROUTING_KEY),
+               conn,
+               RABBIT_QUEUE)
     except Exception as e:
         logger.error("Worker exception: {}".format(e))
     finally:

@@ -4,23 +4,23 @@ import cw
 class MessagingException(Exception):
     pass
 
-def listen(cfg, callback_handler, conn):
+def listen(callback_handler, conn, queue):
     try:
         channel = conn.channel()
         # This needs to be manual ack'ing, research and make sure
         # otherwise we'll get multiple deliveries.
         channel.basic_consume(callback_handler,
-                              queue=cfg['rabbit-queue'],
+                              queue=queue,
                               no_ack=True)
         channel.start_consuming()
     except Exception as e:
         raise MessagingException("Exception in message listener:{}".format(e))
 
-def send(cfg, message, connection):
+def send(message, connection, exchange, routing_key):
     try:
         channel = connection.channel()
-        return channel.basic_publish(exchange=cfg['rabbit-exchange'],
-                                     routing_key=cfg['rabbit-result-routing-key'],
+        return channel.basic_publish(exchange=exchange,
+                                     routing_key=routing_key,
                                      body=message,
                                      properties=pika.BasicProperties(
                                      delivery_mode=2, # make message persistent
@@ -28,12 +28,12 @@ def send(cfg, message, connection):
     except Exception as e:
         raise MessagingException("Exception sending message:{}".format(e))
 
-def open_connection(config):
+def open_connection(host, port, ssl=False):
     try:
         return pika.BlockingConnection(
-            pika.ConnectionParameters(host=config['rabbit-host'],
-                                      port=config['rabbit-port'],
-                                      ssl=config['rabbit-ssl']))
+            pika.ConnectionParameters(host=host,
+                                      port=port,
+                                      ssl=ssl))
     except Exception as e:
         raise MessagingException("problem establishing rabbitmq connection: {}".format(e))
 
