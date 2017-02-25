@@ -1,54 +1,57 @@
-import json
-from . import messaging
-from . import spark
-from .app import logger
+# these imports are to provide a clean set of imports for the entire package
+# ex: import cw
+#     cw.send(...)
+
+from .messaging import send
+from .messaging import listen
+from .messaging import open_connectiom
+from .messaging import close_connection
+from .worker import callback
+
 import msgpack
+import os
+import sys
+import logging
+import numpy as np
 
-def send(cfg, message, connection):
-    try:
-        return messaging.send(cfg, message, connection)
-    except Exception as e:
-        logger.error('Change-Worker message queue send error: {}'.format(e))
+config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
+          'rabbit-port': int(os.getenv('LCW_RABBIT_PORT', 5672)),
+          'rabbit-queue': os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changes.worker'),
+          'rabbit-exchange': os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker'),
+          'rabbit-result-routing-key': os.getenv('LCW_RABBIT_RESULT_ROUTING_KEY', 'change-detection-result'),
+          'rabbit-ssl': os.getenv('LCW_RABBIT_SSL', False),
+          'api-host': os.getenv('LCW_API_HOST', 'http://localhost'),
+          'api-port': os.getenv('LCW_API_PORT', '5678'),
+          'log-level': os.getenv('LCW_LOG_LEVEL', 10),
+          'ubid_band_dict': {
+              'tm': {'red': 'band3',
+                     'blue': 'band1',
+                     'green': 'band2',
+                     'nirs': 'band4',
+                     'swir1s': 'band5',
+                     'swir2s': 'band7',
+                     'thermals': 'band6',
+                     'qas': 'cfmask'},
+              'oli': {'red': 'band4',
+                      'blue': 'band2',
+                      'green': 'band3',
+                      'nirs': 'band5',
+                      'swir1s': 'band6',
+                      'swir2s': 'band7',
+                      'thermals': 'band10',
+                      'qas': 'cfmask'}},
+           'numpy_type_map': {
+               'UINT8': np.uint8,
+               'UINT16': np.uint16,
+               'INT8': np.int8,
+               'INT16': np.int16
+           }
+          }
 
-
-def listen(cfg, callback, conn):
-    try:
-        messaging.listen(cfg, callback, conn)
-    except Exception as e:
-        logger.error('Change-Worker message queue listener error: {}'.format(e))
-
-
-def launch_task(cfg, msg_body):
-    # msg_body needs to be a url
-    return spark.run(cfg, msg_body)
-
-
-def decode_body(body):
-    """ Convert keys and values unpacked as bytes to strings """
-    out = dict()
-    for k, v in body.items():
-        out_k, out_v = k, v
-        if isinstance(k, bytes):
-            out_k = k.decode('utf-8')
-        if isinstance(v, bytes):
-            out_v = v.decode('utf-8')
-        out[out_k] = out_v
-    return out
-
-
-def callback(cfg, connection):
-    def handler(ch, method, properties, body):
-        try:
-            logger.info("Received message with packed body: {}".format(body))
-            unpacked_body = decode_body(msgpack.unpackb(body))
-            logger.info("Launching task for unpacked body {}".format(unpacked_body))
-            results = launch_task(cfg, unpacked_body)
-            logger.info("Now returning results of type:{}".format(type(results)))
-            for result in results:
-                packed_result = msgpack.packb(result)
-                logger.info("Delivering packed result: {}".format(packed_result))
-                logger.info(send(cfg, packed_result, connection))
-        except Exception as e:
-            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
-
-    return handler
+logging.basicConfig(stream=sys.stdout,
+                    level=config['log-level'],
+                    format='%(asctime)s %(module)s::%(funcName)-20s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+# turn Pika DOWN
+logging.getLogger("pika").setLevel(logging.WARNING)
+logger = logging.getLogger('lcw')

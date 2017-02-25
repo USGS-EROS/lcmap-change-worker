@@ -1,10 +1,8 @@
 import pika
-from .app import logger
-
+from cw import logger
 
 class MessagingException(Exception):
     pass
-
 
 def listen(cfg, callback_handler, conn):
     try:
@@ -18,7 +16,6 @@ def listen(cfg, callback_handler, conn):
     except Exception as e:
         raise MessagingException("Exception in message listener:{}".format(e))
 
-
 def send(cfg, message, connection):
     try:
         channel = connection.channel()
@@ -31,7 +28,6 @@ def send(cfg, message, connection):
     except Exception as e:
         raise MessagingException("Exception sending message:{}".format(e))
 
-
 def open_connection(config):
     try:
         return pika.BlockingConnection(
@@ -41,7 +37,6 @@ def open_connection(config):
     except Exception as e:
         raise MessagingException("problem establishing rabbitmq connection: {}".format(e))
 
-
 def close_connection(conn):
     if conn is not None and conn.is_open:
         try:
@@ -49,4 +44,3 @@ def close_connection(conn):
         except Exception as e:
             logger.error("Problem closing rabbitmq connection: {}".format(e))
     return True
-

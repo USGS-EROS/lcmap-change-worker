@@ -8,16 +8,11 @@ import requests
 import json
 import xarray as xr
 import pandas as pd
+import messaging
 from datetime import datetime
+from cw import logger
 
-from .app import logger
-
-
-class SparkException(Exception):
-    pass
-
-
-class Spark(object):
+class Worker(object):
     def __init__(self, config):
         self.config = config
 
@@ -35,7 +30,7 @@ class Spark(object):
                 # value needs to be a list, make it unique using set()
                 _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
         except Exception as e:
-            raise SparkException("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
+            raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
 
         return _spec_map
 
@@ -52,7 +47,7 @@ class Spark(object):
             shape   = specs_map[spec['ubid']]['data_shape']
             buffer  = base64.b64decode(tile['data'])
         except KeyError as e:
-            raise SparkException("as_numpy_array inputs missing expected keys: {}".format(e))
+            raise Exception("as_numpy_array inputs missing expected keys: {}".format(e))
 
         return np.frombuffer(buffer, np_type).reshape(*shape)
 
@@ -63,12 +58,12 @@ class Spark(object):
             specs = requests.get(specs_url).json()
             tiles = requests.get(tiles_url, params=params).json()
         except Exception as e:
-            raise SparkException("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
+            raise Exception("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
                                  "exception: {}".format(specs_url, tiles_url, params, e))
 
         # If no tiles were returned, raise exception
         if not tiles:
-            raise SparkException("No tile data for url: {}, params: {}\nCannot proceed".format(tiles_url, params))
+            raise Exception("No tile data for url: {}, params: {}\nCannot proceed".format(tiles_url, params))
 
         # specs may not be unique, deal with it
         uniq_specs = []
@@ -112,7 +107,7 @@ class Spark(object):
                               quality=np.array(rainbow['cfmask'].values[:, x, y]),
                               dates=list(rainbow['ordinal']))
         except Exception as e:
-            raise SparkException(e)
+            raise Exception(e)
 
     def simplify_objects(self, obj):
         if isinstance(obj, np.bool_):
@@ -153,7 +148,7 @@ class Spark(object):
             querystr_list = input_d['inputs_url'].split('?')[1].split('&')
             requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
         except KeyError as e:
-            raise SparkException("input for spark.run missing expected key values: {}".format(e))
+            raise Exception("input for spark.run missing expected key values: {}".format(e))
 
         rainbow = self.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
 
@@ -175,7 +170,7 @@ class Spark(object):
                     outgoing['result'] = json.dumps(self.simplify_detect_results(results))
                     outgoing['result_ok'] = True
                     outgoing['algorithm'] = results['algorithm']
-                except SparkException as e:
+                except Exception as e:
                     logger.error("Exception running ccd.detect: {}".format(e))
                     outgoing['result'] = ''
                     outgoing['result_ok'] = False
@@ -186,7 +181,30 @@ class Spark(object):
                 outgoing['inputs_md5'] = 'not implemented'
                 yield outgoing
 
+def __decode_body(body):
+    """ Convert keys and values unpacked as bytes to strings """
+    out = dict()
+    for k, v in body.items():
+        out_k, out_v = k, v
+        if isinstance(k, bytes):
+            out_k = k.decode('utf-8')
+        if isinstance(v, bytes):
+            out_v = v.decode('utf-8')
+        out[out_k] = out_v
+    return out
 
-def run(config, indata):
-    sprk = Spark(config)
-    return sprk.run(indata)
+def callback(cfg, connection):
+    def handler(ch, method, properties, body):
+        try:
+            logger.debug("Received message with packed body: {}".format(body))
+            unpacked_body = __decode_body(msgpack.unpackb(body))
+            logger.debug("Launching task for unpacked body {}".format(unpacked_body))
+            results = Worker(cfg).run(unpacked_body)
+            logger.debug("Now returning results of type:{}".format(type(results)))
+            for result in results:
+                packed_result = msgpack.packb(result)
+                logger.debug("Delivering packed result: {}".format(packed_result))
+                logger.info(messaging.send(cfg, packed_result, connection))
+        except Exception as e:
+            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
+    return handler
