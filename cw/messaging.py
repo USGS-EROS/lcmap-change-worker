@@ -9,8 +9,8 @@ def listen(callback_handler, conn, queue):
     # This needs to be manual ack'ing, research and make sure
     # otherwise we'll get multiple deliveries.
     channel.basic_consume(callback_handler,
-                          queue=queue,
-                          no_ack=False)
+                          queue=queue)
+    channel.basic_qos(prefetch_count=1)
     channel.start_consuming()
 
 def send(message, channel, exchange, routing_key):
