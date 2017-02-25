@@ -4,7 +4,7 @@
 
 from .messaging import send
 from .messaging import listen
-from .messaging import open_connectiom
+from .messaging import open_connection
 from .messaging import close_connection
 from .worker import callback
 

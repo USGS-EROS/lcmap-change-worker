@@ -8,9 +8,9 @@ import requests
 import json
 import xarray as xr
 import pandas as pd
-import messaging
+from . import messaging
 from datetime import datetime
-from cw import logger
+import cw
 
 class Worker(object):
     def __init__(self, config):
@@ -139,7 +139,7 @@ class Worker(object):
         return results of ccd.detect along with other details necessary for storing
         results in a data warehouse
         """
-        logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
+        cw.cw.logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
         try:
             dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
             tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
@@ -171,7 +171,7 @@ class Worker(object):
                     outgoing['result_ok'] = True
                     outgoing['algorithm'] = results['algorithm']
                 except Exception as e:
-                    logger.error("Exception running ccd.detect: {}".format(e))
+                    cw.logger.error("Exception running ccd.detect: {}".format(e))
                     outgoing['result'] = ''
                     outgoing['result_ok'] = False
 
@@ -196,15 +196,15 @@ def __decode_body(body):
 def callback(cfg, connection):
     def handler(ch, method, properties, body):
         try:
-            logger.debug("Received message with packed body: {}".format(body))
+            cw.logger.debug("Received message with packed body: {}".format(body))
             unpacked_body = __decode_body(msgpack.unpackb(body))
-            logger.debug("Launching task for unpacked body {}".format(unpacked_body))
+            cw.logger.debug("Launching task for unpacked body {}".format(unpacked_body))
             results = Worker(cfg).run(unpacked_body)
-            logger.debug("Now returning results of type:{}".format(type(results)))
+            cw.logger.debug("Now returning results of type:{}".format(type(results)))
             for result in results:
                 packed_result = msgpack.packb(result)
-                logger.debug("Delivering packed result: {}".format(packed_result))
-                logger.info(messaging.send(cfg, packed_result, connection))
+                cw.logger.debug("Delivering packed result: {}".format(packed_result))
+                cw.logger.info(messaging.send(cfg, packed_result, connection))
         except Exception as e:
-            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
+            cw.logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
     return handler
