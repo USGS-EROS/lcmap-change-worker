@@ -37,9 +37,10 @@ config = {'rabbit-host': os.getenv('LCW_RABBIT_HOST', 'localhost'),
            }
           }
 
-
 logging.basicConfig(stream=sys.stdout,
                     level=config['log-level'],
                     format='%(asctime)s %(module)s::%(funcName)-20s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
+# turn Pika DOWN
+logging.getLogger("pika").setLevel(logging.WARNING)
 logger = logging.getLogger('lcw')
