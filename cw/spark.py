@@ -5,7 +5,7 @@ import hashlib
 import math
 import numpy as np
 import requests
-import msgpack
+import json
 import xarray as xr
 import pandas as pd
 from datetime import datetime
@@ -172,7 +172,7 @@ class Spark(object):
                 try:
                     # results.keys(): algorithm, change_models, procedure, processing_mask,
                     results = self.detect(rainbow, x, y)
-                    outgoing['result'] = self.simplify_detect_results(results)
+                    outgoing['result'] = json.dumps(self.simplify_detect_results(results))
                     outgoing['result_ok'] = True
                     outgoing['algorithm'] = results['algorithm']
                 except SparkException as e:
@@ -181,7 +181,7 @@ class Spark(object):
                     outgoing['result_ok'] = False
 
                 outgoing['x'], outgoing['y'] = xx, yy
-                outgoing['result_md5'] = hashlib.md5(outgoing['result']).hexdigest()
+                outgoing['result_md5'] = hashlib.md5(outgoing['result'].encode('UTF-8')).hexdigest()
                 outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
                 outgoing['inputs_md5'] = 'not implemented'
                 yield outgoing
