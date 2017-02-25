@@ -32,8 +32,6 @@ UBID_BAND_DICT = {
             'qas': 'cfmask'}
 }
 
-
-
 class Worker(object):
     def __init__(self):
         pass
@@ -224,6 +222,7 @@ def __decode_body(body):
 def callback(connection, exchange, routing_key):
     def handler(ch, method, properties, body):
         try:
+            channel = connection.channel()
             cw.logger.debug("Received message with packed body: {}".format(body))
             unpacked_body = __decode_body(msgpack.unpackb(body))
             cw.logger.debug("Launching task for unpacked body {}".format(unpacked_body))
@@ -232,7 +231,10 @@ def callback(connection, exchange, routing_key):
             for result in results:
                 packed_result = msgpack.packb(result)
                 cw.logger.debug("Delivering packed result: {}".format(packed_result))
-                cw.logger.info(messaging.send(packed_result, connection, exchange, routing_key))
+                cw.logger.info(messaging.send(packed_result, channel, exchange, routing_key))
         except Exception as e:
             cw.logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
+        finally:
+            channel.close()
+
     return handler
