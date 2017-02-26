@@ -225,7 +225,7 @@ def callback(connection, exchange, routing_key):
             cw.logger.debug("Received message with packed body: {}".format(body))
             unpacked_body = __decode_body(msgpack.unpackb(body))
             cw.logger.debug("Launching task for unpacked body {}".format(unpacked_body))
-            results = Worker(cfg).run(unpacked_body)
+            results = Worker().run(unpacked_body)
             cw.logger.debug("Now returning results of type:{}".format(type(results)))
             for result in results:
                 packed_result = msgpack.packb(result)

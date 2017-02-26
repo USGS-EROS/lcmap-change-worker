@@ -13,8 +13,8 @@ import os
 import numpy as np
 
 RABBIT_HOST = os.getenv('LCW_RABBIT_HOST', 'localhost')
-RABBIT_PORT = os.getenv('LCW_RABBIT_PORT', 5672)
-RABBIT_QUEUE = os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changres.worker')
+RABBIT_PORT = int(os.getenv('LCW_RABBIT_PORT', 5672))
+RABBIT_QUEUE = os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changes.worker')
 RABBIT_EXCHANGE = os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker')
 RABBIT_SSL = os.getenv('LCW_RABBIT_SSL', False)
 TILE_SPEC_HOST = os.getenv('LCW_TILE_SPEC_HOST', 'localhost')
