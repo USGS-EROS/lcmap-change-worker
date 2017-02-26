@@ -235,6 +235,6 @@ def callback(connection, exchange, routing_key):
         except Exception as e:
             cw.logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
             cw.logger.error('Requeuing message: {}'.format(unpacked_body))
-            channel.basic_nack(delivery_tag=0, multiple=False, requeue=True)
+            channel.basic_nack(multiple=False, requeue=True)
 
     return handler
