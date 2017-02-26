@@ -229,15 +229,14 @@ def callback(connection, exchange, routing_key):
             cw.logger.info("Received message with packed body: {}".format(body))
             unpacked_body = __decode_body(msgpack.unpackb(body))
             results = Worker().run(unpacked_body)
+            channel.basic_ack(delivery_tag=method_frame.delivery_tag)
             for result in results:
                 cw.logger.debug("saving result: {} {}".format(result['x'],result['y']))
                 packed_result = msgpack.packb(result)
                 messaging.send(packed_result, channel, exchange, routing_key)
-            channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         except Exception as e:
-            cw.logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
-            cw.logger.error('Requeuing message: {}'.format(unpacked_body))
-            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=True)
+            cw.logger.error('Unrecoverable error ({}) handling message: {}'.format(e, body))
+            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=False)
             sys.exit(1)
 
     return handler
