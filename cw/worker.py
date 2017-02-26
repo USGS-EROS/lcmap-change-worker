@@ -235,9 +235,8 @@ def callback(connection, exchange, routing_key):
                 messaging.send(packed_result, channel, exchange, routing_key)
             channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         except Exception as e:
-            cw.logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
-            cw.logger.error('Requeuing message: {}'.format(unpacked_body))
-            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=True)
+            cw.logger.error('Unrecoverable error ({}) handling message: {}'.format(e, body))
+            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=False)
             sys.exit(1)
 
     return handler
