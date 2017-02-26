@@ -31,9 +31,6 @@ logging.basicConfig(stream=sys.stdout,
 # turn Pika DOWN
 logging.getLogger("pika").setLevel(logging.WARNING)
 
-# turn everything down by default
-logging.getLogger("").setLevel(logging.WARNING)
-
 # let cw.* modules use configuration value
 logger = logging.getLogger('cw')
 logger.setLevel(LOG_LEVEL)

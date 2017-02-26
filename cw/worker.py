@@ -238,6 +238,6 @@ def callback(connection, exchange, routing_key):
             cw.logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
             cw.logger.error('Requeuing message: {}'.format(unpacked_body))
             channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=True)
-            sys.exit(1) # DISCUSS
+            sys.exit(1)
 
     return handler
