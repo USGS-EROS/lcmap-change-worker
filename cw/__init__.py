@@ -1,54 +1,36 @@
-import json
-from . import messaging
-from . import spark
-from .app import logger
-import msgpack
+# these imports are to provide a clean set of imports for the entire package
+# ex: import cw
+#     cw.send(...)
 
-def send(cfg, message, connection):
-    try:
-        return messaging.send(cfg, message, connection)
-    except Exception as e:
-        logger.error('Change-Worker message queue send error: {}'.format(e))
+from .messaging import send
+from .messaging import listen
+from .messaging import open_connection
+from .messaging import close_connection
+from .worker import callback
+import sys
+import logging
+import os
+import numpy as np
 
+RABBIT_HOST = os.getenv('LCW_RABBIT_HOST', 'localhost')
+RABBIT_PORT = os.getenv('LCW_RABBIT_PORT', 5672)
+RABBIT_PORT = int(os.getenv('LCW_RABBIT_PORT', 5672))
+RABBIT_QUEUE = os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changes.worker')
+RABBIT_EXCHANGE = os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker')
+RABBIT_SSL = os.getenv('LCW_RABBIT_SSL', False)
+TILE_SPEC_HOST = os.getenv('LCW_TILE_SPEC_HOST', 'localhost')
+TILE_SPEC_PORT = int(os.getenv('LCW_TILE_SPEC_PORT', 5678))
+LOG_LEVEL = os.getenv('LCW_LOG_LEVEL', "INFO")
+RESULT_ROUTING_KEY = os.getenv('LCW_RESULT_ROUTING_KEY', 'change-detection-result')
 
-def listen(cfg, callback, conn):
-    try:
-        messaging.listen(cfg, callback, conn)
-    except Exception as e:
-        logger.error('Change-Worker message queue listener error: {}'.format(e))
+logging.basicConfig(stream=sys.stdout,
+                    level=LOG_LEVEL,
+                    format='%(asctime)s %(module)s::%(funcName)-20s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
+# turn Pika DOWN
+logging.getLogger("pika").setLevel(logging.WARNING)
 
-def launch_task(cfg, msg_body):
-    # msg_body needs to be a url
-    return spark.run(cfg, msg_body)
-
-
-def decode_body(body):
-    """ Convert keys and values unpacked as bytes to strings """
-    out = dict()
-    for k, v in body.items():
-        out_k, out_v = k, v
-        if isinstance(k, bytes):
-            out_k = k.decode('utf-8')
-        if isinstance(v, bytes):
-            out_v = v.decode('utf-8')
-        out[out_k] = out_v
-    return out
-
-
-def callback(cfg, connection):
-    def handler(ch, method, properties, body):
-        try:
-            logger.info("Received message with packed body: {}".format(body))
-            unpacked_body = decode_body(msgpack.unpackb(body))
-            logger.info("Launching task for unpacked body {}".format(unpacked_body))
-            results = launch_task(cfg, unpacked_body)
-            logger.info("Now returning results of type:{}".format(type(results)))
-            for result in results:
-                packed_result = msgpack.packb(result)
-                logger.info("Delivering packed result: {}".format(packed_result))
-                logger.info(send(cfg, packed_result, connection))
-        except Exception as e:
-            logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
-
-    return handler
+# let cw.* modules use configuration value
+logger = logging.getLogger('cw')
+logger.setLevel(LOG_LEVEL)

@@ -3,23 +3,39 @@ import base64
 import ccd
 import hashlib
 import math
+import msgpack
 import numpy as np
 import requests
 import json
 import xarray as xr
 import pandas as pd
+import sys
+from . import messaging
 from datetime import datetime
+import cw
 
-from .app import logger
+UBID_BAND_DICT = {
+    'tm': {'red': 'band3',
+           'blue': 'band1',
+           'green': 'band2',
+           'nirs': 'band4',
+           'swir1s': 'band5',
+           'swir2s': 'band7',
+           'thermals': 'band6',
+           'qas': 'cfmask'},
+    'oli': {'red': 'band4',
+            'blue': 'band2',
+            'green': 'band3',
+            'nirs': 'band5',
+            'swir1s': 'band6',
+            'swir2s': 'band7',
+            'thermals': 'band10',
+            'qas': 'cfmask'}
+}
 
-
-class SparkException(Exception):
-    pass
-
-
-class Spark(object):
-    def __init__(self, config):
-        self.config = config
+class Worker(object):
+    def __init__(self):
+        pass
 
     def spectral_map(self, specs_url):
         """ Return a dict of sensor bands keyed to their respective spectrum """
@@ -31,11 +47,12 @@ class Spark(object):
         try:
             for spectra in _map:
                 url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
+                cw.logger.debug("tile-specs url:{}".format(url))
                 resp = requests.get(url).json()
                 # value needs to be a list, make it unique using set()
                 _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
         except Exception as e:
-            raise SparkException("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
+            raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
 
         return _spec_map
 
@@ -46,13 +63,19 @@ class Spark(object):
 
     def as_numpy_array(self, tile, specs_map):
         """ Return numpy array of tile data grouped by spectral map """
+        NUMPY_TYPES = {
+            'UINT8': np.uint8,
+            'UINT16': np.uint16,
+            'INT8': np.int8,
+            'INT16': np.int16
+        }
         try:
             spec    = specs_map[tile['ubid']]
-            np_type = self.config['numpy_type_map'][spec['data_type']]
+            np_type = NUMPY_TYPES[spec['data_type']]
             shape   = specs_map[spec['ubid']]['data_shape']
             buffer  = base64.b64decode(tile['data'])
         except KeyError as e:
-            raise SparkException("as_numpy_array inputs missing expected keys: {}".format(e))
+            raise Exception("as_numpy_array inputs missing expected keys: {}".format(e))
 
         return np.frombuffer(buffer, np_type).reshape(*shape)
 
@@ -63,12 +86,12 @@ class Spark(object):
             specs = requests.get(specs_url).json()
             tiles = requests.get(tiles_url, params=params).json()
         except Exception as e:
-            raise SparkException("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
+            raise Exception("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
                                  "exception: {}".format(specs_url, tiles_url, params, e))
 
         # If no tiles were returned, raise exception
         if not tiles:
-            raise SparkException("No tile data for url: {}, params: {}\nCannot proceed".format(tiles_url, params))
+            raise Exception("No tile data for url: {}, params: {}\nCannot proceed".format(tiles_url, params))
 
         # specs may not be unique, deal with it
         uniq_specs = []
@@ -112,7 +135,7 @@ class Spark(object):
                               quality=np.array(rainbow['cfmask'].values[:, x, y]),
                               dates=list(rainbow['ordinal']))
         except Exception as e:
-            raise SparkException(e)
+            raise Exception(e)
 
     def simplify_objects(self, obj):
         if isinstance(obj, np.bool_):
@@ -144,16 +167,18 @@ class Spark(object):
         return results of ccd.detect along with other details necessary for storing
         results in a data warehouse
         """
-        logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
+        cw.logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
         try:
             dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
             tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
+
             tiles_url = input_d['inputs_url'].split('?')[0]
             specs_url = tiles_url.replace('/tiles', '/tile-specs')
+
             querystr_list = input_d['inputs_url'].split('?')[1].split('&')
             requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
         except KeyError as e:
-            raise SparkException("input for spark.run missing expected key values: {}".format(e))
+            raise Exception("input for spark.run missing expected key values: {}".format(e))
 
         rainbow = self.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
 
@@ -175,8 +200,8 @@ class Spark(object):
                     outgoing['result'] = json.dumps(self.simplify_detect_results(results))
                     outgoing['result_ok'] = True
                     outgoing['algorithm'] = results['algorithm']
-                except SparkException as e:
-                    logger.error("Exception running ccd.detect: {}".format(e))
+                except Exception as e:
+                    cw.logger.error("Exception running ccd.detect: {}".format(e))
                     outgoing['result'] = ''
                     outgoing['result_ok'] = False
 
@@ -186,7 +211,33 @@ class Spark(object):
                 outgoing['inputs_md5'] = 'not implemented'
                 yield outgoing
 
+def __decode_body(body):
+    """ Convert keys and values unpacked as bytes to strings """
+    out = dict()
+    for k, v in body.items():
+        out_k, out_v = k, v
+        if isinstance(k, bytes):
+            out_k = k.decode('utf-8')
+        if isinstance(v, bytes):
+            out_v = v.decode('utf-8')
+        out[out_k] = out_v
+    return out
 
-def run(config, indata):
-    sprk = Spark(config)
-    return sprk.run(indata)
+def callback(connection, exchange, routing_key):
+    def handler(channel, method_frame, properties, body):
+        try:
+            cw.logger.info("Received message with packed body: {}".format(body))
+            unpacked_body = __decode_body(msgpack.unpackb(body))
+            results = Worker().run(unpacked_body)
+            for result in results:
+                cw.logger.debug("saving result: {} {}".format(result['x'],result['y']))
+                packed_result = msgpack.packb(result)
+                messaging.send(packed_result, channel, exchange, routing_key)
+            channel.basic_ack(delivery_tag=method_frame.delivery_tag)
+        except Exception as e:
+            cw.logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
+            cw.logger.error('Requeuing message: {}'.format(unpacked_body))
+            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=True)
+            sys.exit(1)
+
+    return handler
