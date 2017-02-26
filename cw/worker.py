@@ -9,6 +9,7 @@ import requests
 import json
 import xarray as xr
 import pandas as pd
+import sys
 from . import messaging
 from datetime import datetime
 import cw
@@ -165,7 +166,7 @@ class Worker(object):
         return results of ccd.detect along with other details necessary for storing
         results in a data warehouse
         """
-        cw.cw.logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
+        cw.logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
         try:
             dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
             tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
@@ -220,21 +221,20 @@ def __decode_body(body):
     return out
 
 def callback(connection, exchange, routing_key):
-    def handler(channel, method, properties, body):
+    def handler(channel, method_frame, properties, body):
         try:
-            cw.logger.debug("Received message with packed body: {}".format(body))
+            cw.logger.info("Received message with packed body: {}".format(body))
             unpacked_body = __decode_body(msgpack.unpackb(body))
-            cw.logger.debug("Launching task for unpacked body {}".format(unpacked_body))
-            results = Worker(cfg).run(unpacked_body)
-            cw.logger.debug("Now returning results of type:{}".format(type(results)))
+            results = Worker().run(unpacked_body)
             for result in results:
+                cw.logger.debug("saving result: {} {}".format(result['x'],result['y']))
                 packed_result = msgpack.packb(result)
-                cw.logger.debug("Delivering packed result: {}".format(packed_result))
-                cw.logger.info(messaging.send(packed_result, channel, exchange, routing_key))
-            channel.basic_ack(multiple=False)
+                messaging.send(packed_result, channel, exchange, routing_key)
+            channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         except Exception as e:
             cw.logger.error('Change-Worker Execution error. body: {}\nexception: {}'.format(body, e))
             cw.logger.error('Requeuing message: {}'.format(unpacked_body))
-            channel.basic_nack(delivery_tag=0, multiple=False, requeue=True)
+            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=True)
+            sys.exit(1) # DISCUSS
 
     return handler

@@ -7,6 +7,7 @@ from cw import RABBIT_HOST
 from cw import RABBIT_PORT
 from cw import RABBIT_EXCHANGE
 from cw import RESULT_ROUTING_KEY
+from cw import RABBIT_QUEUE
 
 def main():
     conn = None

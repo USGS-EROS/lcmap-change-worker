@@ -14,7 +14,7 @@ import numpy as np
 
 RABBIT_HOST = os.getenv('LCW_RABBIT_HOST', 'localhost')
 RABBIT_PORT = os.getenv('LCW_RABBIT_PORT', 5672)
-RABBIT_QUEUE = os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changres.worker')
+RABBIT_QUEUE = os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changes.worker')
 RABBIT_EXCHANGE = os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker')
 RABBIT_SSL = os.getenv('LCW_RABBIT_SSL', False)
 TILE_SPEC_HOST = os.getenv('LCW_TILE_SPEC_HOST', 'localhost')
@@ -26,6 +26,13 @@ logging.basicConfig(stream=sys.stdout,
                     level=LOG_LEVEL,
                     format='%(asctime)s %(module)s::%(funcName)-20s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
+
 # turn Pika DOWN
 logging.getLogger("pika").setLevel(logging.WARNING)
-logger = logging.getLogger('lcw')
+
+# turn everything down by default
+logging.getLogger("").setLevel(logging.WARNING)
+
+# let cw.* modules use configuration value
+logger = logging.getLogger('cw')
+logger.setLevel(LOG_LEVEL)
