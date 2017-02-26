@@ -8,6 +8,8 @@ from cw import RABBIT_PORT
 from cw import RABBIT_QUEUE
 from cw import RABBIT_EXCHANGE
 from cw import RESULT_ROUTING_KEY
+import traceback
+import sys
 
 def main():
     conn = None
@@ -18,6 +20,7 @@ def main():
                RABBIT_QUEUE)
     except Exception as e:
         logger.error("Worker exception: {}".format(e))
+        traceback.print_exc(file=sys.stderr)
     finally:
         close_connection(conn)
 

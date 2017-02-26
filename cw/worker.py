@@ -46,6 +46,7 @@ class Worker(object):
         try:
             for spectra in _map:
                 url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
+                cw.logger.debug("tile-specs url:{}".format(url))
                 resp = requests.get(url).json()
                 # value needs to be a list, make it unique using set()
                 _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
@@ -165,12 +166,14 @@ class Worker(object):
         return results of ccd.detect along with other details necessary for storing
         results in a data warehouse
         """
-        cw.cw.logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
+        cw.logger.info("run() called with keys:{} values:{}".format(list(input_d.keys()), list(input_d.values())))
         try:
             dates = [i.split('=')[1] for i in input_d['inputs_url'].split('&') if 'acquired=' in i][0]
             tile_x, tile_y = input_d['tile_x'], input_d['tile_y']
+
             tiles_url = input_d['inputs_url'].split('?')[0]
             specs_url = tiles_url.replace('/tiles', '/tile-specs')
+
             querystr_list = input_d['inputs_url'].split('?')[1].split('&')
             requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
         except KeyError as e:

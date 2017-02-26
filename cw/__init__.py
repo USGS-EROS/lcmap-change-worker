@@ -18,7 +18,7 @@ RABBIT_QUEUE = os.getenv('LCW_RABBIT_QUEUE', 'local.lcmap.changes.worker')
 RABBIT_EXCHANGE = os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker')
 RABBIT_SSL = os.getenv('LCW_RABBIT_SSL', False)
 TILE_SPEC_HOST = os.getenv('LCW_TILE_SPEC_HOST', 'localhost')
-TILE_SPEC_PORT = os.getenv('LCW_TILE_SPEC_PORT', 5678)
+TILE_SPEC_PORT = int(os.getenv('LCW_TILE_SPEC_PORT', 5678))
 LOG_LEVEL = os.getenv('LCW_LOG_LEVEL', "INFO")
 RESULT_ROUTING_KEY = os.getenv('LCW_RESULT_ROUTING_KEY', 'change-detection-result')
 
