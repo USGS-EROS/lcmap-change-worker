@@ -2,12 +2,12 @@ import json
 import cw
 import pytest
 import pika
+from shared import environment as env
 
-with open("test/resources/config.json", "r+") as h:
-    config = json.loads(h.read())
-
-def connection(config):
+@pytest.fixture(scope='module')
+def aardvark():
     pass
+
 
 def setup_module(module):
     pass
@@ -15,5 +15,5 @@ def setup_module(module):
 def teardown_module(module):
     pass
 
-def test_send_receive():
+def test_send_receive(env):
     pass
