@@ -20,7 +20,7 @@ RABBIT_EXCHANGE = os.getenv('LCW_RABBIT_EXCHANGE', 'local.lcmap.changes.worker')
 RABBIT_SSL = os.getenv('LCW_RABBIT_SSL', False)
 TILE_SPEC_HOST = os.getenv('LCW_TILE_SPEC_HOST', 'localhost')
 TILE_SPEC_PORT = int(os.getenv('LCW_TILE_SPEC_PORT', 5678))
-LOG_LEVEL = os.getenv('LCW_LOG_LEVEL', "INFO")
+LOG_LEVEL = os.getenv('LCW_LOG_LEVEL', 'WARN')
 RESULT_ROUTING_KEY = os.getenv('LCW_RESULT_ROUTING_KEY', 'change-detection-result')
 
 logging.basicConfig(stream=sys.stdout,
@@ -30,6 +30,9 @@ logging.basicConfig(stream=sys.stdout,
 
 # turn Pika DOWN
 logging.getLogger("pika").setLevel(logging.WARNING)
+
+#
+logging.getLogger("").setLevel(LOG_LEVEL)
 
 # let cw.* modules use configuration value
 logger = logging.getLogger('cw')
