@@ -20,13 +20,13 @@ worker for initiating change detection jobs, and sending results to the data sto
 
 ```python
   # same effect as lcw-listen
-  from cw import __listener__
-  __listener__.main()
+  from cw import __worker_main__
+  __worker_main__.main()
 
   # useful for sending test messages only.
-  from cw import __sender__
+  from cw import __test_send__
   message = '{"x": 123, "y": 456, "algorithm": "pyccd-beta1", "result": "OUTPUT"}'
-  __sender__.main(message)
+  __test_send__.main(message)
 ```
 
 ## Configuration
@@ -40,6 +40,7 @@ landsat-change-worker is configurable with the following environment variables
 | `LCW_RABBIT_EXCHANGE` | local.lcmap.changes.worker | Exchange for LCW to publish messages |
 | `LCW_RABBIT_RESULT_ROUTING_KEY` | change-detection-result | Routing key used when publishing change detection result messages |
 | `LCW_RABBIT_SSL` | False | Enable/Disable SSL.  True/False |
+| `LCW_LOG_LEVEL` | INFO | Logging Level.  INFO/DEBUG/WARNING/ERROR/CRITICAL |
 
 ## Developing & Testing
 Get the local environment ready for development and testing.
@@ -52,7 +53,7 @@ Get the local environment ready for development and testing.
    $ pip install -e .[dev]
 ```
 
-Run tests:
+Run tests (WIP):
 ```bash
    # the right way
    $ python setup.py test
@@ -60,4 +61,3 @@ Run tests:
    # alternatively
    $ pytest
 ```
-## Deploying
