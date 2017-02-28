@@ -12,18 +12,30 @@ import pandas as pd
 import sys
 from . import messaging
 from datetime import datetime
+from collections import Iterable
 import cw
 
-flatten = lambda l: [item for sublist in l for item in sublist]
+
+def flatten(obj):
+    out = []
+    for i in obj:
+        if not isinstance(i, str) and isinstance(i, Iterable):
+            out.extend(i)
+        else:
+            out.append(i)
+    return out
+
 
 def tile_specs(url):
     return requests.get(url).json()
+
 
 def tags(tile_specs):
     """ Returns tuples of tag to ubid """
     for spec in tile_specs:
         for tag in flatten(spec['tags']):
-            yield (tag: spec['ubid'])
+            yield (tag, spec['ubid'])
+
 
 def spectral_map(tags):
     """ Merges a sequence of 2 element tuples into a dictionary """
@@ -89,7 +101,7 @@ def landsat_dataset(spectrum, x, y, t, ubid, specs_url, tiles_url):
         tiles = requests.get(tiles_url, params=params).json()
     except Exception as e:
         raise Exception("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
-                             "exception: {}".format(specs_url, tiles_url, params, e))
+                        "exception: {}".format(specs_url, tiles_url, params, e))
 
     # If no tiles were returned, raise exception
     if not tiles:
@@ -187,7 +199,7 @@ def run(msg):
     except KeyError as e:
         raise Exception("input for worker.run missing expected key values: {}".format(e))
 
-    rainbow = rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
+    rbow = rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
 
     # hard coding dimensions for the moment,
     # it should come from a tile-spec query
@@ -203,7 +215,7 @@ def run(msg):
             outgoing = dict()
             try:
                 # results.keys(): algorithm, change_models, procedure, processing_mask,
-                results = detect(rainbow, x, y)
+                results = detect(rbow, x, y)
                 outgoing['result'] = json.dumps(simplify_detect_results(results))
                 outgoing['result_ok'] = True
                 outgoing['algorithm'] = results['algorithm']

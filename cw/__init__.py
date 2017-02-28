@@ -19,7 +19,7 @@ RABBIT_QUEUE =       os.getenv('LCW_RABBIT_QUEUE')
 RABBIT_EXCHANGE =    os.getenv('LCW_RABBIT_EXCHANGE')
 RABBIT_SSL =         boolean(os.getenv('LCW_RABBIT_SSL', 'False'))
 TILE_SPEC_HOST =     os.getenv('LCW_TILE_SPEC_HOST')
-TILE_SPEC_PORT =     int(os.getenv('LCW_TILE_SPEC_PORT'))
+TILE_SPEC_PORT =     int(os.getenv('LCW_TILE_SPEC_PORT', '80'))
 LOG_LEVEL =          os.getenv('LCW_LOG_LEVEL', 'INFO')
 RESULT_ROUTING_KEY = os.getenv('LCW_RESULT_ROUTING_KEY')
 
