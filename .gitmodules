@@ -1,3 +1,4 @@
 [submodule "data"]
 	path = data
-	url = https://github.com/usgs-eros/lcmap-test/data
+	url = https://github.com/usgs-eros/lcmap-test-data
+
