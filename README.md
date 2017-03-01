@@ -29,6 +29,7 @@ landsat-change-worker is configurable with the following environment variables
 | `LCW_RABBIT_EXCHANGE` | local.lcmap.changes.worker | Exchange for LCW to publish messages |
 | `LCW_RABBIT_RESULT_ROUTING_KEY` | change-detection-result | Routing key used when publishing change detection result messages |
 | `LCW_RABBIT_SSL` | False | Enable/Disable SSL.  True/False |
+| `LCW_LOG_LEVEL` | INFO | Logging Level.  INFO/DEBUG/WARNING/ERROR/CRITICAL |
 
 ## Developing & Testing
 Get the local environment ready for development and testing.
