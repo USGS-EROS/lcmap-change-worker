@@ -12,43 +12,14 @@ import pandas as pd
 import sys
 from . import messaging
 from datetime import datetime
-from collections import Iterable
 import cw
 
 
-def flatten(obj):
-    out = []
-    for i in obj:
-        if not isinstance(i, str) and isinstance(i, Iterable):
-            out.extend(i)
-        else:
-            out.append(i)
-    return out
+def get_request(url, params=None):
+    return requests.get(url, params=params).json()
 
 
-def tile_specs(url):
-    return requests.get(url).json()
-
-
-def tags(tile_specs):
-    """ Returns tuples of tag to ubid """
-    for spec in tile_specs:
-        for tag in flatten(spec['tags']):
-            yield (tag, spec['ubid'])
-
-
-def spectral_map(tags):
-    """ Merges a sequence of 2 element tuples into a dictionary """
-    mapping = {}
-    for tag in tags:
-        if tag[0] in mapping:
-            mapping[tag[0]].update(set([tag[1]]))
-        else:
-            mapping[tag[0]] = set([tag[1]])
-    return mapping
-
-
-def spectral_map(specs_url):
+def spectral_map(specs_resp):
     """ Return a dict of sensor bands keyed to their respective spectrum """
     _spec_map = dict()
     _map = {'thermal': 'toa -11', 'cfmask': '+cfmask -conf'}
@@ -57,13 +28,12 @@ def spectral_map(specs_url):
 
     try:
         for spectra in _map:
-            url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
-            cw.logger.debug("tile-specs url:{}".format(url))
-            resp = requests.get(url).json()
+            #url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
+            #cw.logger.debug("tile-specs url:{}".format(url))
             # value needs to be a list, make it unique using set()
-            _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
+            _spec_map[spectra] = list(set([i['ubid'] for i in specs_resp]))
     except Exception as e:
-        raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
+        raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format('xxx', e))
 
     return _spec_map
 
@@ -93,20 +63,8 @@ def as_numpy_array(tile, specs_map):
     return np.frombuffer(buffer, np_type).reshape(*shape)
 
 
-def landsat_dataset(spectrum, x, y, t, ubid, specs_url, tiles_url):
+def landsat_dataset(spectrum, ubid, specs, tiles):
     """ Return stack of landsat data for a given ubid, x, y, and time-span """
-    params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
-    try:
-        specs = requests.get(specs_url).json()
-        tiles = requests.get(tiles_url, params=params).json()
-    except Exception as e:
-        raise Exception("Problem requesting tile data from api, specs_url: {}, tiles_url: {}, params: {}, "
-                        "exception: {}".format(specs_url, tiles_url, params, e))
-
-    # If no tiles were returned, raise exception
-    if not tiles:
-        raise Exception("No tile data for url: {}, params: {}\nCannot proceed".format(tiles_url, params))
-
     # specs may not be unique, deal with it
     uniq_specs = []
     for spec in specs:
@@ -128,11 +86,18 @@ def landsat_dataset(spectrum, x, y, t, ubid, specs_url, tiles_url):
 
 def rainbow(x, y, t, specs_url, tiles_url, requested_ubids):
     """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
+    specs_resp = get_request(specs_url)
+    if not specs_resp:
+        raise Exception("No specs returned from: {}".format(specs_url))
     ds = xr.Dataset()
-    for (spectrum, ubids) in spectral_map(specs_url).items():
+    for (spectrum, ubids) in spectral_map(specs_resp).items():
         for ubid in ubids:
             if ubid in requested_ubids:
-                band = landsat_dataset(spectrum, x, y, t, ubid, specs_url, tiles_url)
+                params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
+                tiles_resp = get_request(tiles_url, params=params)
+                if not tiles_resp:
+                    raise Exception("No tiles returned for url: {} , params: {}".format(tiles_url, params))
+                band = landsat_dataset(spectrum, ubid, specs_resp, tiles_resp)
                 if band:
                     ds = ds.merge(band)
     return ds
@@ -180,7 +145,7 @@ def simplify_detect_results(results):
     return output
 
 
-def run(msg):
+def run(msg, dimrng=100):
     """
     Generator. Given parameters of 'inputs_url', 'tile_x', & 'tile_y',
     return results of ccd.detect along with other details necessary for
@@ -205,7 +170,7 @@ def run(msg):
     # it should come from a tile-spec query
     # {'data_shape': [100, 100], 'pixel_x': 30, 'pixel_y': -30}
     # tile-spec query results should then be provided to detect()
-    dimrng = 100
+    #dimrng = 100
     for x in range(0, dimrng):
         for y in range(0, dimrng):
             px, py = (30, -30)
