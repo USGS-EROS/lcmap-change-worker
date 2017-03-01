@@ -18,17 +18,6 @@ worker for initiating change detection jobs, and sending results to the data sto
   $ lcw-test-send '{"some":"message"}'
 ```
 
-```python
-  # same effect as lcw-listen
-  from cw import __listener__
-  __listener__.main()
-
-  # useful for sending test messages only.
-  from cw import __sender__
-  message = '{"x": 123, "y": 456, "algorithm": "pyccd-beta1", "result": "OUTPUT"}'
-  __sender__.main(message)
-```
-
 ## Configuration
 landsat-change-worker is configurable with the following environment variables
 
@@ -46,6 +35,8 @@ Get the local environment ready for development and testing.
 ```bash
    $ git clone git@github.com:usgs-eros/lcmap-change-worker
    $ cd lcmap-change-worker
+   $ git submodule init
+   $ git submodule update
    $ virtualenv -p python3 .venv
    $ . .venv/bin/activate
    $ pip install -e .[test]
@@ -54,10 +45,6 @@ Get the local environment ready for development and testing.
 
 Run tests:
 ```bash
-   # the right way
-   $ python setup.py test
-
-   # alternatively
    $ pytest
 ```
 ## Deploying
