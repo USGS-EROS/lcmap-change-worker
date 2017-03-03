@@ -16,7 +16,7 @@ def main():
     conn = None
     try:
         conn = open_connection(RABBIT_HOST, RABBIT_PORT)
-        listen(callback(conn, RABBIT_EXCHANGE, RESULT_ROUTING_KEY),
+        listen(callback(RABBIT_EXCHANGE, RESULT_ROUTING_KEY),
                conn,
                RABBIT_QUEUE)
     except Exception as e:
