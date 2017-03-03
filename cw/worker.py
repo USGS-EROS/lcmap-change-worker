@@ -39,9 +39,10 @@ def spectral_map(specs_url):
     return _spec_map, _spec_whole
 
 
-def dtstr_to_ordinal(dtstr):
+def dtstr_to_ordinal(dtstr, iso=True):
     """ Return ordinal from string formatted date"""
-    _dt = datetime.strptime(dtstr, '%Y-%m-%dT%H:%M:%SZ')
+    _fmt = '%Y-%m-%dT%H:%M:%SZ' if iso else '%Y-%m-%d %H:%M:%S'
+    _dt = datetime.strptime(dtstr, _fmt)
     return _dt.toordinal()
 
 
@@ -79,9 +80,6 @@ def landsat_dataset(spectrum, ubid, specs, tiles):
     ds[spectrum] = (('t', 'x', 'y'), rasters)
     ds[spectrum].attrs = {'color': spectrum}
     ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in tiles]))
-    ds.coords['source'] = (('t'), [t['source'] for t in tiles])
-    ds.coords['acquired'] = (('t'), [t['acquired'] for t in tiles])
-    ds.coords['ordinal'] = (('t'), [dtstr_to_ordinal(t['acquired']) for t in tiles])
     return ds
 
 
@@ -98,13 +96,15 @@ def rainbow(x, y, t, specs_url, tiles_url, requested_ubids):
                     raise Exception("No tiles returned for url: {} , params: {}".format(tiles_url, params))
                 band = landsat_dataset(spectrum, ubid, spec_whole, tiles_resp)
                 if band:
-                    ds = ds.merge(band)
+                    # combine_first instead of merge, for locations where data is missing for some bands
+                    ds = ds.combine_first(band)
     return ds
 
 
 def detect(rainbow, x, y):
     """ Return results of ccd.detect for a given stack of data at a particular x and y """
     try:
+        rainbow_date_array = np.array(rainbow['t'].values)
         return ccd.detect(blues=np.array(rainbow['blue'].values[:, x, y]),
                           greens=np.array(rainbow['green'].values[:, x, y]),
                           reds=np.array(rainbow['red'].values[:, x, y]),
@@ -113,7 +113,7 @@ def detect(rainbow, x, y):
                           swir2s=np.array(rainbow['swir2'].values[:, x, y]),
                           thermals=np.array(rainbow['thermal'].values[:, x, y]),
                           quality=np.array(rainbow['cfmask'].values[:, x, y]),
-                          dates=list(rainbow['ordinal']))
+                          dates=[dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array])
     except Exception as e:
         raise Exception(e)
 

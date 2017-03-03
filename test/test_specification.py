@@ -90,8 +90,6 @@ def test_landsat_dataset(monkeypatch):
     resp = worker.landsat_dataset(band, ubid, spec_whole, tiles)
     assert isinstance(resp, xr.Dataset)
     assert len(resp[band]) == 631
-    for k in ('source', 'acquired', 'ordinal', 't'):
-        assert k in resp.coords.keys()
 
 
 def test_rainbow(monkeypatch):
@@ -111,9 +109,8 @@ def test_rainbow(monkeypatch):
 
     resp = worker.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
     assert isinstance(resp, xr.Dataset)
-    assert len(resp[band]) == 1501
-    for k in ('source', 'acquired', 'ordinal', 't'):
-        assert k in resp.coords.keys()
+    for bnd in ('blue', 'red', 'green', 'cfmask', 'nir', 'swir1', 'swir2', 'thermal'):
+        assert len(resp[bnd]) == 1501
 
 
 def test_detect(monkeypatch):
