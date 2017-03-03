@@ -6,7 +6,7 @@ import pytest
 import glob
 import numpy as np
 import xarray as xr
-from test import shared
+from . import shared
 
 # some constants
 band = 'blue'
