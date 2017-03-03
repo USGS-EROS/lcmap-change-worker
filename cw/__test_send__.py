@@ -12,7 +12,8 @@ def main(message):
     conn = None
     try:
         conn = open_connection(RABBIT_HOST, RABBIT_PORT)
-        send(message, conn, RABBIT_EXCHANGE, RESULT_ROUTING_KEY)
+        channel = conn.channel()
+        send(message, channel, RABBIT_EXCHANGE, RESULT_ROUTING_KEY)
     except Exception as e:
         logger.error("Exception sending message: {}".format(e))
     finally:

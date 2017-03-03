@@ -21,7 +21,7 @@ RABBIT_SSL =         boolean(os.getenv('LCW_RABBIT_SSL', 'False'))
 TILE_SPEC_HOST =     os.getenv('LCW_TILE_SPEC_HOST')
 TILE_SPEC_PORT =     int(os.getenv('LCW_TILE_SPEC_PORT', '80'))
 LOG_LEVEL =          os.getenv('LCW_LOG_LEVEL', 'INFO')
-RESULT_ROUTING_KEY = os.getenv('LCW_RESULT_ROUTING_KEY')
+RESULT_ROUTING_KEY = os.getenv('LCW_RABBIT_RESULT_ROUTING_KEY')
 
 logging.basicConfig(stream=sys.stdout,
                     level=LOG_LEVEL,
