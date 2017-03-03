@@ -12,7 +12,7 @@ from . import shared
 band = 'blue'
 ubid = 'LANDSAT_7/ETM/sr_band1'
 tile_specs_url = 'http://localhost/landsat/tile-specs'
-tiles_json = 'test/resources/band_data/{}_-1821585_2891595_{}.json'.format(band, ubid.replace('/', '-'))
+tiles_json = 'data/tiles/band-json/{}_-1821585_2891595_{}.json'.format(band, ubid.replace('/', '-'))
 
 
 def fetch_json(jsonfile):
@@ -25,15 +25,15 @@ def mock_get_spectral_request(url):
     # method for mocking spectral requests
     if '?q=' in url:
         spectrum = url.split(':')[-1].replace(')', '')
-        return fetch_json('test/resources/spec_data/spec_{}.json'.format(spectrum))
+        return fetch_json('data/tile-specs/spec_{}.json'.format(spectrum))
     else:
-        return fetch_json('test/resources/spec_data/spec_all.json')
+        return fetch_json('data/tile-specs/spec_all.json')
 
 
 def mock_get_tiles_request(url, params):
     # method for mocking tiles data response
     ubid = params['ubid'].replace('/', '-')
-    fname = "test/resources/band_data/*_{}_{}_{}.json".format(params['x'], params['y'], ubid)
+    fname = "data/tiles/band-json/*_{}_{}_{}.json".format(params['x'], params['y'], ubid)
     jfile = glob.glob(fname)[0]
     return fetch_json(jfile)
 
@@ -42,9 +42,9 @@ def mock_spectral_map(url):
     # method for mocking spectral map response
     _spec_map = dict()
     for bnd in ('blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'thermal', 'cfmask'):
-        _json = fetch_json('test/resources/spec_data/spec_{}.json'.format(bnd))
+        _json = fetch_json('data/tile-specs/spec_{}.json'.format(bnd))
         _spec_map[bnd] = list(set([i['ubid'] for i in _json]))
-    _spec_whole = fetch_json('test/resources/spec_data/spec_all.json')
+    _spec_whole = fetch_json('data/tile-specs/spec_all.json')
     return _spec_map, _spec_whole
 
 
@@ -168,8 +168,4 @@ def test_run(monkeypatch):
     resp = worker.run(shared.good_input_data, dimrng=3)
     for i in resp:
         assert set(i.keys()) == {'result_md5', 'algorithm', 'result_ok', 'result', 'result_produced', 'y', 'x', 'inputs_md5'}
-
-
-def test_decode_body():
-    assert 'True' == 'True'
 
