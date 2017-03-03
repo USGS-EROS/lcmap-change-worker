@@ -137,7 +137,7 @@ def test_detect(monkeypatch):
     assert isinstance(resp, dict)
     assert set(resp.keys()) == {'procedure', 'processing_mask', 'algorithm', 'change_models'}
     assert resp['change_models'][0].start_day == 724134.0
-    assert resp['change_models'][0].num_coefficients == 8
+    assert resp['change_models'][0].curve_qa == 8
 
 
 def test_simplify_detect_results(monkeypatch):
