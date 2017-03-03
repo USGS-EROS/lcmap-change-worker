@@ -159,7 +159,7 @@ def test_simplify_detect_results(monkeypatch):
     dtect = worker.detect(rainbow, x=54, y=39)
 
     resp = worker.simplify_detect_results(dtect)
-    assert resp == shared.simplified_detect_results
+    assert set(resp.keys()) == set(shared.simplified_detect_results.keys())
 
 
 def test_run(monkeypatch):
