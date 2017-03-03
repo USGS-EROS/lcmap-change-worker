@@ -122,12 +122,6 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    # entry_points={'console_scripts': ['pyccd-detect=ccd.cli:detect', ], },
     entry_points = {'console_scripts': ['lcw-listen=cw.__worker_main__:main',
                                         'lcw-test-send=cw.__test_send__:main']}
-    ##entry_points='''
-    ##    [core_package.cli_plugins]
-    ##    sample=ccd.cli:sample
-    ##    another_subcommand=ccd.cli:another_subcommand
-    ##''',
-)
+    )

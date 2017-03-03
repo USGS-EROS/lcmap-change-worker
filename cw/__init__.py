@@ -11,6 +11,7 @@ import sys
 import logging
 import os
 
+
 boolean = lambda b: b.lower() in ['true', '1']
 
 RABBIT_HOST =        os.getenv('LCW_RABBIT_HOST')
