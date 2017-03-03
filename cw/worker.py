@@ -2,7 +2,6 @@
 import base64
 import ccd
 import hashlib
-import math
 import msgpack
 import numpy as np
 import requests
@@ -19,7 +18,7 @@ def get_request(url, params=None):
     return requests.get(url, params=params).json()
 
 
-def spectral_map(specs_resp):
+def spectral_map(specs_url):
     """ Return a dict of sensor bands keyed to their respective spectrum """
     _spec_map = dict()
     _map = {'thermal': 'toa -11', 'cfmask': '+cfmask -conf'}
@@ -28,14 +27,16 @@ def spectral_map(specs_resp):
 
     try:
         for spectra in _map:
-            #url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
-            #cw.logger.debug("tile-specs url:{}".format(url))
+            url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
+            cw.logger.debug("tile-specs url:{}".format(url))
+            resp = get_request(url)
             # value needs to be a list, make it unique using set()
-            _spec_map[spectra] = list(set([i['ubid'] for i in specs_resp]))
+            _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
+        _spec_whole = get_request(specs_url)
     except Exception as e:
-        raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format('xxx', e))
+        raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
 
-    return _spec_map
+    return _spec_map, _spec_whole
 
 
 def dtstr_to_ordinal(dtstr):
@@ -72,32 +73,30 @@ def landsat_dataset(spectrum, ubid, specs, tiles):
             uniq_specs.append(spec)
 
     specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
-    rasters   = xr.DataArray([as_numpy_array(tile, specs_map) for tile in tiles])
+    rasters = xr.DataArray([as_numpy_array(tile, specs_map) for tile in tiles])
 
     ds = xr.Dataset()
-    ds[spectrum]          = (('t', 'x', 'y'), rasters)
-    ds[spectrum].attrs    = {'color': spectrum}
-    ds.coords['t']        = (('t'), pd.to_datetime([t['acquired'] for t in tiles]))
-    ds.coords['source']   = (('t'), [t['source'] for t in tiles])
+    ds[spectrum] = (('t', 'x', 'y'), rasters)
+    ds[spectrum].attrs = {'color': spectrum}
+    ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in tiles]))
+    ds.coords['source'] = (('t'), [t['source'] for t in tiles])
     ds.coords['acquired'] = (('t'), [t['acquired'] for t in tiles])
-    ds.coords['ordinal']  = (('t'), [dtstr_to_ordinal(t['acquired']) for t in tiles])
+    ds.coords['ordinal'] = (('t'), [dtstr_to_ordinal(t['acquired']) for t in tiles])
     return ds
 
 
 def rainbow(x, y, t, specs_url, tiles_url, requested_ubids):
     """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
-    specs_resp = get_request(specs_url)
-    if not specs_resp:
-        raise Exception("No specs returned from: {}".format(specs_url))
+    spec_map, spec_whole = spectral_map(specs_url)
     ds = xr.Dataset()
-    for (spectrum, ubids) in spectral_map(specs_resp).items():
+    for (spectrum, ubids) in spec_map.items():
         for ubid in ubids:
             if ubid in requested_ubids:
                 params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
                 tiles_resp = get_request(tiles_url, params=params)
                 if not tiles_resp:
                     raise Exception("No tiles returned for url: {} , params: {}".format(tiles_url, params))
-                band = landsat_dataset(spectrum, ubid, specs_resp, tiles_resp)
+                band = landsat_dataset(spectrum, ubid, spec_whole, tiles_resp)
                 if band:
                     ds = ds.merge(band)
     return ds
@@ -170,7 +169,6 @@ def run(msg, dimrng=100):
     # it should come from a tile-spec query
     # {'data_shape': [100, 100], 'pixel_x': 30, 'pixel_y': -30}
     # tile-spec query results should then be provided to detect()
-    #dimrng = 100
     for x in range(0, dimrng):
         for y in range(0, dimrng):
             px, py = (30, -30)
