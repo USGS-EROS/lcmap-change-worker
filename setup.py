@@ -34,7 +34,7 @@ setup(
     maintainer_email='clay.austin.ctr@usgs.gov',
 
     # The project's main homepage.
-    url='https://github.com/usgs-eros/lcmap-change-worker',
+    url='https://github.com/usgs-eros/lcmap-pyccd-worker',
 
     # Author details
     author='',
@@ -122,6 +122,6 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    entry_points = {'console_scripts': ['lcw-listen=cw.__worker_main__:main',
-                                        'lcw-test-send=cw.__test_send__:main']}
+    entry_points = {'console_scripts': ['lpw-listen=cw.__worker_main__:main',
+                                        'lpw-test-send=cw.__test_send__:main']}
     )

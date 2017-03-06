@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/USGS-EROS/lcmap-change-worker.svg?branch=develop)](https://travis-ci.org/USGS-EROS/lcmap-change-worker)
 
-# lcmap-change-worker
+# lcmap-pyccd-worker
 worker for initiating change detection jobs, and sending results to the data store
 
 ## Install
@@ -23,13 +23,12 @@ landsat-change-worker is configurable with the following environment variables
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `LCW_RABBIT_HOST` | localhost | RabbitMQ Host |
-| `LCW_RABBIT_PORT` | 5672      | RabbitMQ Port |
-| `LCW_RABBIT_QUEUE` | local.lcmap.changes.worker | Queue for LCW to listen for messages |
-| `LCW_RABBIT_EXCHANGE` | local.lcmap.changes.worker | Exchange for LCW to publish messages |
-| `LCW_RABBIT_RESULT_ROUTING_KEY` | change-detection-result | Routing key used when publishing change detection result messages |
-| `LCW_RABBIT_SSL` | False | Enable/Disable SSL.  True/False |
-| `LCW_LOG_LEVEL` | INFO | Logging Level.  INFO/DEBUG/WARNING/ERROR/CRITICAL |
+| `LPW_RABBIT_HOST` | localhost | RabbitMQ Host |
+| `LPW_RABBIT_PORT` | 5672      | RabbitMQ Port |
+| `LPW_RABBIT_QUEUE` | local.lcmap.changes.worker | Queue for LCW to listen for messages |
+| `LPW_RABBIT_EXCHANGE` | local.lcmap.changes.worker | Exchange for LCW to publish messages |
+| `LPW_RABBIT_SSL` | False | Enable/Disable SSL.  True/False |
+| `LPW_LOG_LEVEL` | INFO | Logging Level.  INFO/DEBUG/WARNING/ERROR/CRITICAL |
 
 ## Developing & Testing
 Get the local environment ready for development and testing.

@@ -15,14 +15,14 @@ import os
 
 boolean = lambda b: b.lower() in ['true', '1']
 
-RABBIT_HOST =        os.getenv('LCW_RABBIT_HOST')
-RABBIT_PORT =        int(os.getenv('LCW_RABBIT_PORT', '5672'))
-RABBIT_QUEUE =       os.getenv('LCW_RABBIT_QUEUE')
-RABBIT_EXCHANGE =    os.getenv('LCW_RABBIT_EXCHANGE')
-RABBIT_SSL =         boolean(os.getenv('LCW_RABBIT_SSL', 'False'))
-TILE_SPEC_HOST =     os.getenv('LCW_TILE_SPEC_HOST')
-TILE_SPEC_PORT =     int(os.getenv('LCW_TILE_SPEC_PORT', '80'))
-LOG_LEVEL =          os.getenv('LCW_LOG_LEVEL', 'INFO')
+RABBIT_HOST =        os.getenv('LPW_RABBIT_HOST')
+RABBIT_PORT =        int(os.getenv('LPW_RABBIT_PORT', '5672'))
+RABBIT_QUEUE =       os.getenv('LPW_RABBIT_QUEUE')
+RABBIT_EXCHANGE =    os.getenv('LPW_RABBIT_EXCHANGE')
+RABBIT_SSL =         boolean(os.getenv('LPW_RABBIT_SSL', 'False'))
+TILE_SPEC_HOST =     os.getenv('LPW_TILE_SPEC_HOST')
+TILE_SPEC_PORT =     int(os.getenv('LPW_TILE_SPEC_PORT', '80'))
+LOG_LEVEL =          os.getenv('LPW_LOG_LEVEL', 'INFO')
 RESULT_ROUTING_KEY = ccd_alg_version
 
 logging.basicConfig(stream=sys.stdout,
