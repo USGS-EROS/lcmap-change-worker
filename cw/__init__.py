@@ -6,6 +6,7 @@ from .messaging import listen
 from .messaging import open_connection
 from .messaging import close_connection
 from .worker import callback
+from .http import run_http
 from ccd import algorithm as ccd_alg_version
 
 import sys

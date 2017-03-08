@@ -86,6 +86,7 @@ setup(
                       'pandas==0.19.2',
                       'numpy==1.12.0',
                       'msgpack-python==0.4.8',
+                      'pyramid==1.8.2',
     ],
 
     # List additional groups of dependencies here (e.g. development
