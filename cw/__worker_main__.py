@@ -14,22 +14,28 @@ import sys
 import threading
 
 
-def main():
+def listen_wrapper():
     conn = None
     try:
         conn = open_connection(RABBIT_HOST, RABBIT_PORT)
+        listen(callback(RABBIT_EXCHANGE, RESULT_ROUTING_KEY), conn, RABBIT_QUEUE)
+    except Exception as e:
+        logger.error('Worker exception: {}'.format(e))
+        traceback.print_exc(file=sys.stderr)
+    finally:
+        close_connection(conn)
+
+
+def main():
+    try:
         listener_thread_name = 'listener_thread'
-        listener_thread = threading.Thread(target=listen,
-                                           args=(callback(RABBIT_EXCHANGE, RESULT_ROUTING_KEY), conn, RABBIT_QUEUE),
-                                           name=listener_thread_name)
+        listener_thread = threading.Thread(target=listen_wrapper, name=listener_thread_name)
         http_thread = threading.Thread(target=run_http, kwargs={'tname': listener_thread_name})
         listener_thread.start()
         http_thread.start()
     except Exception as e:
         logger.error("Worker exception: {}".format(e))
         traceback.print_exc(file=sys.stderr)
-    finally:
-        close_connection(conn)
 
 if __name__ == "__main__":
     main()

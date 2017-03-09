@@ -7,13 +7,12 @@ import threading
 
 @view_config(route_name='health', renderer='json')
 def health(request):
-    status = 500
+    status, msg = 500, 'listener is dead'
     for thread in threading.enumerate():
         if thread.name == request.registry.settings['listen_thread']:
             if thread.is_alive():
-                status = 200
-    return Response(status=status, body='healthy')
-    #return {'response': request.registry.settings['listen_thread']}
+                status, msg = 200, 'health'
+    return Response(status=status, body=msg)
 
 
 def run_http(tname=None):
