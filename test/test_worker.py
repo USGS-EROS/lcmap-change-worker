@@ -2,10 +2,12 @@ import json
 import xarray
 import cw
 from cw import worker
+from cw import __worker_main__ as wm
 import pytest
 import glob
 import numpy as np
 import xarray as xr
+import requests
 from . import shared
 
 # some constants
@@ -165,4 +167,6 @@ def test_run(monkeypatch):
     resp = worker.run(shared.good_input_data, dimrng=3)
     for i in resp:
         assert set(i.keys()) == {'result_md5', 'algorithm', 'result_ok', 'result', 'result_produced', 'y', 'x', 'inputs_md5'}
+
+
 

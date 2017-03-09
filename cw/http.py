@@ -2,23 +2,38 @@ from wsgiref.simple_server import make_server
 from pyramid.config import Configurator
 from pyramid.view import view_config
 from pyramid.response import Response
-import threading
+import multiprocessing as mp
+import traceback
 
 
 @view_config(route_name='health', renderer='json')
 def health(request):
-    status, msg = 500, 'listener is dead'
-    for thread in threading.enumerate():
-        if thread.name == request.registry.settings['listen_thread']:
-            if thread.is_alive():
-                status, msg = 200, 'health'
-    return Response(status=status, body=msg)
+    return Response(status=200, body='healthy')
 
 
-def run_http(tname=None):
-    config = Configurator(settings={'listen_thread': tname})
-    for func, route in (('health', '/health'),):
-        config.add_route(func, route)
-    config.scan()
-    server = make_server('0.0.0.0', 8080, config.make_wsgi_app())
-    server.serve_forever()
+def run():
+    try:
+        config = Configurator()
+        for func, route in (('health', '/health'),):
+            config.add_route(func, route)
+        config.scan()
+        server = make_server('0.0.0.0', 8080, config.make_wsgi_app())
+        server.serve_forever()
+    except Exception as e:
+        # Aid debugging when starting with multiprocess
+        traceback.print_exc()
+        raise e
+
+
+def run_http():
+    http_process = mp.Process(target=run)
+    http_process.start()
+    return http_process
+
+
+def terminate_http(process):
+    try:
+        process.terminate()
+    except AttributeError:
+        pass
+    return True
