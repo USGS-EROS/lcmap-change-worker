@@ -18,15 +18,13 @@ def main():
     conn = None
     try:
         conn = open_connection(RABBIT_HOST, RABBIT_PORT)
-        listener_thread = threading.Thread(target=listen, args=(callback(RABBIT_EXCHANGE, RESULT_ROUTING_KEY), conn, RABBIT_QUEUE))
-        http_thread = threading.Thread(target=run_http, args=(listener_thread))
+        listener_thread_name = 'listener_thread'
+        listener_thread = threading.Thread(target=listen,
+                                           args=(callback(RABBIT_EXCHANGE, RESULT_ROUTING_KEY), conn, RABBIT_QUEUE),
+                                           name=listener_thread_name)
+        http_thread = threading.Thread(target=run_http, kwargs={'tname': listener_thread_name})
         listener_thread.start()
         http_thread.start()
-
-        #listen(callback(RABBIT_EXCHANGE, RESULT_ROUTING_KEY),
-        #       conn,
-        #       RABBIT_QUEUE)
-        # run_http()
     except Exception as e:
         logger.error("Worker exception: {}".format(e))
         traceback.print_exc(file=sys.stderr)
