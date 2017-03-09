@@ -11,13 +11,13 @@ def health(request):
     return Response(status=200, body='healthy')
 
 
-def run():
+def run(port=8080):
     try:
         config = Configurator()
         for func, route in (('health', '/health'),):
             config.add_route(func, route)
         config.scan()
-        server = make_server('0.0.0.0', 8080, config.make_wsgi_app())
+        server = make_server('0.0.0.0', port, config.make_wsgi_app())
         server.serve_forever()
     except Exception as e:
         # Aid debugging when starting with multiprocess
@@ -25,8 +25,8 @@ def run():
         raise e
 
 
-def run_http():
-    http_process = mp.Process(target=run)
+def run_http(port):
+    http_process = mp.Process(target=run, args=(port,))
     http_process.start()
     return http_process
 

@@ -5,6 +5,7 @@ from cw import open_connection
 from cw import close_connection
 from cw import run_http
 from cw import terminate_http
+from cw import HTTP_PORT
 from cw import RABBIT_HOST
 from cw import RABBIT_PORT
 from cw import RABBIT_QUEUE
@@ -18,7 +19,7 @@ def main():
     conn = None
     http_process = None
     try:
-        http_process = run_http()
+        http_process = run_http(HTTP_PORT)
         conn = open_connection(RABBIT_HOST, RABBIT_PORT)
         listen(callback(RABBIT_EXCHANGE, RESULT_ROUTING_KEY), conn, RABBIT_QUEUE)
     except Exception as e:

@@ -5,9 +5,6 @@ class MessagingException(Exception):
     pass
 
 def listen(callback_handler, conn, queue):
-    print('** callback_handler: {}'.format(callback_handler))
-    print('** conn: {}'.format(conn))
-    print('** queue: {}'.format(queue))
     channel = conn.channel()
     # This needs to be manual ack'ing, research and make sure
     # otherwise we'll get multiple deliveries.

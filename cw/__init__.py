@@ -17,6 +17,7 @@ import os
 
 boolean = lambda b: b.lower() in ['true', '1']
 
+HTTP_PORT =          os.getenv('LCW_HTTP_PORT', 8080)
 RABBIT_HOST =        os.getenv('LCW_RABBIT_HOST')
 RABBIT_PORT =        int(os.getenv('LCW_RABBIT_PORT', '5672'))
 RABBIT_QUEUE =       os.getenv('LCW_RABBIT_QUEUE')
