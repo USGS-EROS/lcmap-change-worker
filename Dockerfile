@@ -4,7 +4,7 @@ MAINTAINER USGS LCMAP http://eros.usgs.gov
 
 RUN mkdir /app
 WORKDIR /app
-COPY cw /app/cw
+COPY pw /app/pw
 COPY pytest.ini /app
 COPY README.md /app
 COPY resources /app/resources
