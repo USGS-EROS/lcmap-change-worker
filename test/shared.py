@@ -5,8 +5,8 @@ import pytest
 def set_environment():
     os.environ['LPW_RABBIT_HOST']        = 'localhost'
     os.environ['LPW_RABBIT_PORT']        = '5672'
-    os.environ['LPW_RABBIT_QUEUE']       = 'unit.lcmap.changes.worker'
-    os.environ['LPW_RABBIT_EXCHANGE']    = 'unit.lcmap.changes.worker'
+    os.environ['LPW_RABBIT_QUEUE']       = 'unit.lcmap.pyccd.worker'
+    os.environ['LPW_RABBIT_EXCHANGE']    = 'unit.lcmap.pyccd.worker'
     os.environ['LPW_RABBIT_SSL']         = 'False'
     os.environ['LPW_TILE_SPEC_HOST']     = 'localhost'
     os.environ['LPW_TILE_SPEC_PORT']     = '5678'
