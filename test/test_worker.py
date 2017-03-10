@@ -1,13 +1,8 @@
 import json
-import xarray
-import cw
-from cw import worker
-from cw import __worker_main__ as wm
-import pytest
+from pw import worker
 import glob
 import numpy as np
 import xarray as xr
-import requests
 from . import shared
 
 # some constants
@@ -52,7 +47,7 @@ def mock_spectral_map(url):
 
 def test_spectral_map(monkeypatch):
     # test creating spectral map
-    monkeypatch.setattr('cw.worker.get_request', mock_get_spectral_request)
+    monkeypatch.setattr('pw.worker.get_request', mock_get_spectral_request)
     spec_map, spec_whole = worker.spectral_map(tile_specs_url)
     assert set(spec_map.keys()) == shared.spect_map_keys
     assert len(spec_whole) == 75
@@ -67,7 +62,7 @@ def test_dtstr_to_ordinal():
 
 def test_as_numpy_array(monkeypatch):
     # test converting landsat dataset into numpy array
-    monkeypatch.setattr('cw.worker.get_request', mock_get_spectral_request)
+    monkeypatch.setattr('pw.worker.get_request', mock_get_spectral_request)
     _map, spec_whole = worker.spectral_map(tile_specs_url)
     tiles = fetch_json(tiles_json)
 
@@ -85,7 +80,7 @@ def test_as_numpy_array(monkeypatch):
 
 def test_landsat_dataset(monkeypatch):
     # test assembling landsat data
-    monkeypatch.setattr('cw.worker.get_request', mock_get_spectral_request)
+    monkeypatch.setattr('pw.worker.get_request', mock_get_spectral_request)
     _map, spec_whole = worker.spectral_map(tile_specs_url)
     tiles = fetch_json(tiles_json)
 
@@ -96,8 +91,8 @@ def test_landsat_dataset(monkeypatch):
 
 def test_rainbow(monkeypatch):
     # test assemble data for ccd
-    monkeypatch.setattr('cw.worker.spectral_map', mock_spectral_map)
-    monkeypatch.setattr('cw.worker.get_request', mock_get_tiles_request)
+    monkeypatch.setattr('pw.worker.spectral_map', mock_spectral_map)
+    monkeypatch.setattr('pw.worker.get_request', mock_get_tiles_request)
 
     msg = shared.good_input_data
     dates = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
@@ -117,8 +112,8 @@ def test_rainbow(monkeypatch):
 
 def test_detect(monkeypatch):
     # actually run ccd.detect
-    monkeypatch.setattr('cw.worker.spectral_map', mock_spectral_map)
-    monkeypatch.setattr('cw.worker.get_request', mock_get_tiles_request)
+    monkeypatch.setattr('pw.worker.spectral_map', mock_spectral_map)
+    monkeypatch.setattr('pw.worker.get_request', mock_get_tiles_request)
 
     msg = shared.good_input_data
     dates = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
@@ -141,8 +136,8 @@ def test_detect(monkeypatch):
 
 def test_simplify_detect_results(monkeypatch):
     # also tests the simplify_objects function
-    monkeypatch.setattr('cw.worker.spectral_map', mock_spectral_map)
-    monkeypatch.setattr('cw.worker.get_request', mock_get_tiles_request)
+    monkeypatch.setattr('pw.worker.spectral_map', mock_spectral_map)
+    monkeypatch.setattr('pw.worker.get_request', mock_get_tiles_request)
 
     msg = shared.good_input_data
     dates = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
@@ -162,8 +157,8 @@ def test_simplify_detect_results(monkeypatch):
 
 
 def test_run(monkeypatch):
-    monkeypatch.setattr('cw.worker.spectral_map', mock_spectral_map)
-    monkeypatch.setattr('cw.worker.get_request', mock_get_tiles_request)
+    monkeypatch.setattr('pw.worker.spectral_map', mock_spectral_map)
+    monkeypatch.setattr('pw.worker.get_request', mock_get_tiles_request)
     resp = worker.run(shared.good_input_data, dimrng=3)
     for i in resp:
         assert set(i.keys()) == {'result_md5', 'algorithm', 'result_ok', 'result', 'result_produced', 'y', 'x', 'inputs_md5'}

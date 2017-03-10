@@ -3,15 +3,15 @@ import pytest
 
 @pytest.fixture(scope="session")
 def set_environment():
-    os.environ['LCW_RABBIT_HOST']        = 'localhost'
-    os.environ['LCW_RABBIT_PORT']        = '5672'
-    os.environ['LCW_RABBIT_QUEUE']       = 'unit.lcmap.changes.worker'
-    os.environ['LCW_RABBIT_EXCHANGE']    = 'unit.lcmap.changes.worker'
-    os.environ['LCW_RABBIT_SSL']         = 'False'
-    os.environ['LCW_TILE_SPEC_HOST']     = 'localhost'
-    os.environ['LCW_TILE_SPEC_PORT']     = '5678'
-    os.environ['LCW_LOG_LEVEL']          = 'INFO'
-    os.environ['LCW_RESULT_ROUTING_KEY'] = 'change-detection-result'
+    os.environ['LPW_RABBIT_HOST']        = 'localhost'
+    os.environ['LPW_RABBIT_PORT']        = '5672'
+    os.environ['LPW_RABBIT_QUEUE']       = 'unit.lcmap.pyccd.worker'
+    os.environ['LPW_RABBIT_EXCHANGE']    = 'unit.lcmap.pyccd.worker'
+    os.environ['LPW_RABBIT_SSL']         = 'False'
+    os.environ['LPW_TILE_SPEC_HOST']     = 'localhost'
+    os.environ['LPW_TILE_SPEC_PORT']     = '5678'
+    os.environ['LPW_LOG_LEVEL']          = 'INFO'
+    os.environ['LPW_RESULT_ROUTING_KEY'] = 'change-detection-result'
     return os.environ
 
 tile_spec_keys = {'data_shape', 'data_mask', 'tags', 'tile_y', 'data_type', 'tile_x', 'band_spectrum',

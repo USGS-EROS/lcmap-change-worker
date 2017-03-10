@@ -1,17 +1,10 @@
 FROM python:3.5
 MAINTAINER USGS LCMAP http://eros.usgs.gov
 
-ENV version 0.1.0
-
-ENV LCW_RABBIT_HOST rabbitmq
-ENV LCW_RABBIT_PORT 5672
-ENV LCW_RABBIT_QUEUE local.lcmap.changes.worker
-ENV LCW_RABBIT_EXCHANGE	local.lcmap.changes.worker
-ENV LCW_RABBIT_RESULT_ROUTING_KEY change-detection-result
 
 RUN mkdir /app
 WORKDIR /app
-COPY cw /app/cw
+COPY pw /app/pw
 COPY pytest.ini /app
 COPY README.md /app
 COPY resources /app/resources
@@ -21,4 +14,4 @@ COPY version.py /app
 RUN pip install --upgrade pip
 RUN pip install -e.
 
-ENTRYPOINT ["lcw-listen"]
+ENTRYPOINT ["lpw-listen"]

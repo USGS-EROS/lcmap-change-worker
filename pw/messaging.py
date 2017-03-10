@@ -1,8 +1,10 @@
 import pika
-import cw
+import pw
+
 
 class MessagingException(Exception):
     pass
+
 
 def listen(callback_handler, conn, queue):
     channel = conn.channel()
@@ -12,6 +14,7 @@ def listen(callback_handler, conn, queue):
     channel.basic_consume(callback_handler, queue=queue, no_ack=False)
     channel.start_consuming()
 
+
 def send(message, channel, exchange, routing_key):
     return channel.basic_publish(exchange=exchange,
                                  routing_key=routing_key,
@@ -20,6 +23,7 @@ def send(message, channel, exchange, routing_key):
                                      delivery_mode=2, # make message persistent
                                  ))
 
+
 def open_connection(host, port, ssl=False):
     try:
         return pika.BlockingConnection(
@@ -27,10 +31,11 @@ def open_connection(host, port, ssl=False):
     except Exception as e:
         raise MessagingException("problem establishing rabbitmq connection: {}".format(e))
 
+
 def close_connection(conn):
     if conn is not None and conn.is_open:
         try:
             conn.close()
         except Exception as e:
-            cw.logger.error("Problem closing rabbitmq connection: {}".format(e))
+            pw.logger.error("Problem closing rabbitmq connection: {}".format(e))
     return True

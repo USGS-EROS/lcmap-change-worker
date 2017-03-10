@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# This file is executed by Travis CI when a buid succeeds. If you
+# This file is executed by Travis CI when a build succeeds. If you
 # execute this file manually, please be sure the build runs.
 
-export REPO=usgseros/lcmap-change-worker
+export REPO=usgseros/lcmap-pyccd-worker
 
 # If deploying manually the TRAVIS_BRANCH will not be set, so it needs
 # to be set using a git command. Even though this script is intended
@@ -17,10 +17,9 @@ echo Branch: $BRANCH
 COMMIT="${TRAVIS_COMMIT:-`git rev-parse HEAD`}"
 echo Commit: $COMMIT
 
-# Version is extracted from project.clj so that a meaningful tag can
+# Version is extracted from version.py so that a meaningful tag can
 # be added to the image. This expects a particular versioning scheme
 # and handles the case when the string "-SNAPSHOT" is not present.
-#export VERSION=`head -n1 project.clj | grep -oP "[\d+]\.[\d+]\.[\d+](-SNAPSHOT)?"`
 export VERSION=`python -c 'import version; print(version.__version__)'`
 echo Version: $VERSION
 

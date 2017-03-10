@@ -1,16 +1,17 @@
-from cw import callback
-from cw import logger
-from cw import listen
-from cw import open_connection
-from cw import close_connection
-from cw import run_http
-from cw import terminate_http
-from cw import HTTP_PORT
-from cw import RABBIT_HOST
-from cw import RABBIT_PORT
-from cw import RABBIT_QUEUE
-from cw import RABBIT_EXCHANGE
-from cw import RESULT_ROUTING_KEY
+from pw import callback
+from pw import logger
+from pw import listen
+from pw import open_connection
+from pw import close_connection
+from pw import run_http
+from pw import terminate_http
+from pw import HTTP_PORT
+from pw import RABBIT_HOST
+from pw import RABBIT_PORT
+from pw import RABBIT_QUEUE
+from pw import RABBIT_EXCHANGE
+from pw import RESULT_ROUTING_KEY
+
 import traceback
 import sys
 
