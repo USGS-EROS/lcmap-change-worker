@@ -3,7 +3,7 @@ IMAGES=`docker images -q`
 
 # pull the tag from version.py
 TAG=0.1.0
-WORKERIMAGE=lcmap-change-worker:$(TAG)
+WORKERIMAGE=lcmap-pyccd-worker:$(TAG)
 
 docker-build:
 	docker build -t $(WORKERIMAGE) $(PWD)
@@ -28,6 +28,6 @@ clean-venv:
 	@rm -rf .venv
 
 clean:
-	@rm -rf dist build lcmap_change_worker.egg-info
+	@rm -rf dist build lcmap_pyccd_worker.egg-info
 	@find . -name '*.pyc' -delete
 	@find . -name '__pycache__' -delete

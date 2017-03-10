@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/USGS-EROS/lcmap-pyccd-worker.svg?branch=develop)](https://travis-ci.org/USGS-EROS/lcmap-pyccd-worker)
 
-# lcmap-change-worker
+# lcmap-pyccd-worker
 worker for initiating change detection jobs, and sending results to the data store
 
 ## Install
@@ -11,31 +11,30 @@ worker for initiating change detection jobs, and sending results to the data sto
 
 ## Usage
 ```bash
-  # lcw-listen is available following install with pip
-  $ lcw-listen
+  # lpw-listen is available following install with pip
+  $ lpw-listen
 
-  # lcw-test-send will send stdin to the LCW_RABBIT_EXCHANGE
-  $ lcw-test-send '{"some":"message"}'
+  # lpw-test-send will send stdin to the LPW_RABBIT_EXCHANGE
+  $ lpw-test-send '{"some":"message"}'
 ```
 
 ## Configuration
-landsat-change-worker is configurable with the following environment variables
+landsat-pyccd-worker is configurable with the following environment variables
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `LCW_RABBIT_HOST` | localhost | RabbitMQ Host |
-| `LCW_RABBIT_PORT` | 5672      | RabbitMQ Port |
-| `LCW_RABBIT_QUEUE` | local.lcmap.changes.worker | Queue for LCW to listen for messages |
-| `LCW_RABBIT_EXCHANGE` | local.lcmap.changes.worker | Exchange for LCW to publish messages |
-| `LCW_RABBIT_RESULT_ROUTING_KEY` | change-detection-result | Routing key used when publishing change detection result messages |
-| `LCW_RABBIT_SSL` | False | Enable/Disable SSL.  True/False |
-| `LCW_LOG_LEVEL` | INFO | Logging Level.  INFO/DEBUG/WARNING/ERROR/CRITICAL |
+| `LPW_RABBIT_HOST` | localhost | RabbitMQ Host |
+| `LPW_RABBIT_PORT` | 5672      | RabbitMQ Port |
+| `LPW_RABBIT_QUEUE` | local.lcmap.pyccd.worker | Queue for LPW to listen for messages |
+| `LPW_RABBIT_EXCHANGE` | local.lcmap.pyccd.worker | Exchange for LPW to publish messages |
+| `LPW_RABBIT_SSL` | False | Enable/Disable SSL.  True/False |
+| `LPW_LOG_LEVEL` | INFO | Logging Level.  INFO/DEBUG/WARNING/ERROR/CRITICAL |
 
 ## Developing & Testing
 Get the local environment ready for development and testing.
 ```bash
-   $ git clone git@github.com:usgs-eros/lcmap-change-worker
-   $ cd lcmap-change-worker
+   $ git clone git@github.com:usgs-eros/lcmap-pyccd-worker
+   $ cd lcmap-pyccd-worker
    $ git submodule init
    $ git submodule update
    $ virtualenv -p python3 .venv
@@ -46,6 +45,18 @@ Get the local environment ready for development and testing.
 
 Run tests:
 ```bash
-   $ pytest
+   # in a separate shell
+   $ make docker-deps-up-no-daemon
+   # export required env variables
+   # run pytest
+   $ LPW_RABBIT_HOST=localhost LPW_RABBIT_EXCHANGE=test.lcmap.changes.worker LPW_RABBIT_QUEUE=test.lcmap.changes.worker LPW_RABBIT_RESULT_ROUTING_KEY=change-detection_result pytest
 ```
 ## Deploying
+Available from Docker Hub https://hub.docker.com/r/usgseros/lcmap-pyccd-worker/
+```bash
+docker pull usgseros/lcmap-pyccd-worker
+```
+Also available from PYPI
+```bash
+pip install lcmap-pyccd-worker
+```
