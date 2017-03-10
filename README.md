@@ -56,3 +56,7 @@ Available from Docker Hub https://hub.docker.com/r/usgseros/lcmap-pyccd-worker/
 ```bash
 docker pull usgseros/lcmap-pyccd-worker
 ```
+Also available from PYPI
+```bash
+pip install lcmap-pyccd-worker
+```
