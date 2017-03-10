@@ -6,6 +6,8 @@ from .messaging import listen
 from .messaging import open_connection
 from .messaging import close_connection
 from .worker import callback
+from .http import run_http
+from .http import terminate_http
 from ccd import algorithm as ccd_alg_version
 
 import sys
@@ -15,6 +17,7 @@ import os
 
 boolean = lambda b: b.lower() in ['true', '1']
 
+HTTP_PORT =          os.getenv('LPW_HTTP_PORT', 8080)
 RABBIT_HOST =        os.getenv('LPW_RABBIT_HOST')
 RABBIT_PORT =        int(os.getenv('LPW_RABBIT_PORT', '5672'))
 RABBIT_QUEUE =       os.getenv('LPW_RABBIT_QUEUE')
@@ -23,6 +26,7 @@ RABBIT_SSL =         boolean(os.getenv('LPW_RABBIT_SSL', 'False'))
 TILE_SPEC_HOST =     os.getenv('LPW_TILE_SPEC_HOST')
 TILE_SPEC_PORT =     int(os.getenv('LPW_TILE_SPEC_PORT', '80'))
 LOG_LEVEL =          os.getenv('LPW_LOG_LEVEL', 'INFO')
+
 RESULT_ROUTING_KEY = ccd_alg_version
 
 logging.basicConfig(stream=sys.stdout,
