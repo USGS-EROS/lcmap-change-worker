@@ -1,6 +1,6 @@
 # these imports are to provide a clean set of imports for the entire package
-# ex: import cw
-#     cw.send(...)
+# ex: import pw
+#     pw.send(...)
 from .messaging import send
 from .messaging import listen
 from .messaging import open_connection
@@ -36,6 +36,6 @@ logging.getLogger("").setLevel(logging.WARNING)
 # turn Pika DOWN, always want this unless there's wire level issues
 logging.getLogger("pika").setLevel(logging.WARNING)
 
-# let cw.* modules use configuration value
-logger = logging.getLogger('cw')
+# let pw.* modules use configuration value
+logger = logging.getLogger('pw')
 logger.setLevel(LOG_LEVEL)

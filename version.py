@@ -7,5 +7,5 @@ install. Do not import anything into this module."""
 
 """ __version__ MUST align with desired lcmap-pyccd version"""
 __version__ = '1.1.0.170302'
-__name = 'lcmap-change-worker'
+__name = 'lcmap-pyccd-worker'
 __algorithm__ = '-'.join([__name, __version__])

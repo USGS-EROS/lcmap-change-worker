@@ -11,7 +11,7 @@ import pandas as pd
 import sys
 from . import messaging
 from datetime import datetime
-import cw
+import pw
 
 
 def get_request(url, params=None):
@@ -28,7 +28,7 @@ def spectral_map(specs_url):
     try:
         for spectra in _map:
             url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
-            cw.logger.debug("tile-specs url:{}".format(url))
+            pw.logger.debug("tile-specs url:{}".format(url))
             resp = get_request(url)
             # value needs to be a list, make it unique using set()
             _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
@@ -150,7 +150,7 @@ def run(msg, dimrng=100):
     return results of ccd.detect along with other details necessary for
     returning change results
     """
-    cw.logger.info("run() called with keys:{} values:{}".format(list(msg.keys()), list(msg.values())))
+    pw.logger.info("run() called with keys:{} values:{}".format(list(msg.keys()), list(msg.values())))
     try:
         dates     = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
         tile_x    = msg['tile_x']
@@ -183,7 +183,7 @@ def run(msg, dimrng=100):
                 outgoing['result_ok'] = True
                 outgoing['algorithm'] = results['algorithm']
             except Exception as e:
-                cw.logger.error("Exception running ccd.detect: {}".format(e))
+                pw.logger.error("Exception running ccd.detect: {}".format(e))
                 outgoing['result'] = ''
                 outgoing['result_ok'] = False
 
@@ -210,16 +210,16 @@ def decode_body(body):
 def callback(exchange, routing_key):
     def handler(channel, method_frame, properties, body):
         try:
-            cw.logger.info("Received message with packed body: {}".format(body))
+            pw.logger.info("Received message with packed body: {}".format(body))
             unpacked_body = decode_body(msgpack.unpackb(body))
             results = run(unpacked_body)
             for result in results:
-                cw.logger.debug("saving result: {} {}".format(result['x'],result['y']))
+                pw.logger.debug("saving result: {} {}".format(result['x'], result['y']))
                 packed_result = msgpack.packb(result)
                 messaging.send(packed_result, channel, exchange, routing_key)
             channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         except Exception as e:
-            cw.logger.error('Unrecoverable error ({}) handling message: {}'.format(e, body))
+            pw.logger.error('Unrecoverable error ({}) handling message: {}'.format(e, body))
             channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=False)
             sys.exit(1)
 

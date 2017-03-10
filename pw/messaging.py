@@ -1,5 +1,5 @@
 import pika
-import cw
+import pw
 
 
 class MessagingException(Exception):
@@ -37,5 +37,5 @@ def close_connection(conn):
         try:
             conn.close()
         except Exception as e:
-            cw.logger.error("Problem closing rabbitmq connection: {}".format(e))
+            pw.logger.error("Problem closing rabbitmq connection: {}".format(e))
     return True

@@ -3,7 +3,7 @@ IMAGES=`docker images -q`
 
 # pull the tag from version.py
 TAG=0.1.0
-WORKERIMAGE=lcmap-change-worker:$(TAG)
+WORKERIMAGE=lcmap-pyccd-worker:$(TAG)
 
 docker-build:
 	docker build -t $(WORKERIMAGE) $(PWD)

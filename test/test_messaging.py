@@ -1,4 +1,4 @@
-from cw import messaging, send, RABBIT_HOST, RABBIT_PORT, RABBIT_EXCHANGE, RESULT_ROUTING_KEY
+from pw import messaging, send, RABBIT_HOST, RABBIT_PORT, RABBIT_EXCHANGE, RESULT_ROUTING_KEY
 
 
 def test_send():
