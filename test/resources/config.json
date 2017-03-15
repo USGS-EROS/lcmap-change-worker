@@ -1,0 +1,6 @@
+{"rabbit-host": "localhost",
+ "rabbit-port": 5672,
+ "rabbit-queue": "unit.lcmap.pyccd.worker",
+ "rabbit-exchange": "unit.lcmap.pyccd.worker",
+ "rabbit-binding": "unit.",
+ "rabbit-ssl": false}
