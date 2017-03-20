@@ -5,7 +5,13 @@ IMAGES=`docker images -q`
 TAG=0.1.0
 WORKERIMAGE=lcmap-pyccd-worker:$(TAG)
 
-docker-build:
+CON_NAME=container.fu
+get-mesos-lib:
+	docker run -it --name $(CON_NAME) mesosphere/mesos:1.1.0-1.0.104.rc3.ubuntu1404 echo '$(CON_NAME)'
+	docker cp `docker ps -aq --filter "name=$(CON_NAME)"`:/usr/lib/libmesos-1.1.0.so .
+	docker rm `docker ps -aq --filter "name=$(CON_NAME)"`
+
+docker-build: get-mesos-lib
 	docker build -t $(WORKERIMAGE) $(PWD)
 
 docker-shell:

@@ -45,6 +45,7 @@ if [ "$BRANCH" == "master" ] || [ "$BRANCH" == "develop" ] ; then
     BRANCH_TAG=$REPO:$BRANCH-$VERSION
 
     echo "Building Docker image for $COMMIT_TAG ($BRANCH_TAG)"
+    make get-mesos-lib
     docker build -f Dockerfile -t $COMMIT_TAG .
     docker tag $COMMIT_TAG $BRANCH_TAG
     docker push $REPO

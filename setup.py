@@ -87,6 +87,7 @@ setup(
                       'numpy==1.12.0',
                       'msgpack-python==0.4.8',
                       'pyramid==1.8.2',
+                      'cassandra-driver',
     ],
 
     # List additional groups of dependencies here (e.g. development
@@ -123,6 +124,6 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    entry_points = {'console_scripts': ['lpw-listen=pw.__worker_main__:main',
+    entry_points = {'console_scripts': ['lpw-spark=pw.__worker_main__:main',
                                         'lpw-test-send=pw.__test_send__:main']}
     )
