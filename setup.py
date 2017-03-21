@@ -99,7 +99,8 @@ setup(
                  'pytest>=3.0.2',
                  'pytest-profiling>=1.1.1',
                  'gprof2dot>=2015.12.1',
-                 'pytest-watch>=4.1.0'],
+                 'pytest-watch>=4.1.0',
+                 'pytest-cov>=2.4.0',],
         'dev': ['jupyter',],
     },
 
@@ -122,6 +123,5 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    entry_points = {'console_scripts': ['lpw-ready=pw.__worker_main__:main',
-                                        'lpw-spark=pw.__worker_main__:spark']}
+    entry_points = {'console_scripts': ['lpw-ready=pw.__worker_main__:main',]}
     )

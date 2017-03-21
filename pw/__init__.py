@@ -1,10 +1,6 @@
 # these imports are to provide a clean set of imports for the entire package
 # ex: import pw
 #     pw.send(...)
-from .messaging import send
-from .messaging import listen
-from .messaging import open_connection
-from .messaging import close_connection
 from .worker import spark_job
 from .http import run_http
 from .http import terminate_http
@@ -30,9 +26,6 @@ logging.basicConfig(stream=sys.stdout,
 
 # default all loggers to WARNING then explictly override below
 logging.getLogger("").setLevel(logging.WARNING)
-
-# turn Pika DOWN, always want this unless there's wire level issues
-logging.getLogger("pika").setLevel(logging.WARNING)
 
 # let pw.* modules use configuration value
 logger = logging.getLogger('pw')

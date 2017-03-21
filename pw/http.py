@@ -16,6 +16,8 @@ def run(port=8080):
         config = Configurator()
         for func, route in (('health', '/health'),):
             config.add_route(func, route)
+        # enable access to driver.py from the server
+        config.add_static_view('static', 'static')
         config.scan()
         server = make_server('0.0.0.0', port, config.make_wsgi_app())
         server.serve_forever()

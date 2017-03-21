@@ -129,7 +129,7 @@ def assemble_data(inputs, dimrng=100):
     """ Assemble data for RDD generation """
     output = []
     dates  = [i.split('=')[1] for i in inputs['inputs_url'].split('&') if 'acquired=' in i][0]
-    tx, ty = inputs['tile_x'], inputs['tile_y']
+    tx, ty = int(inputs['tile_x']), int(inputs['tile_y'])
     t_url  = inputs['inputs_url'].split('?')[0]
     s_url  = t_url.replace('/tiles', '/tile-specs')
     qlist  = inputs['inputs_url'].split('?')[1].split('&')
@@ -139,7 +139,7 @@ def assemble_data(inputs, dimrng=100):
     for x in range(0, dimrng):
         for y in range(0, dimrng):
             _d = dict()
-            for _bnd in ('blue', 'green', 'red', 'swir1', 'swir2', 'thermal', 'cfmask'):
+            for _bnd in ('blue', 'green', 'red', 'swir1', 'swir2', 'thermal', 'cfmask', 'nir'):
                 _d[_bnd] = np.array(rbow[_bnd].values[:, x, y])
             _d['dates'] = np.array(rbow['t'].values)
             px, py = tx+(x * 30), ty+(y * -30)
@@ -147,18 +147,19 @@ def assemble_data(inputs, dimrng=100):
     return output
 
 
+def save_detect(record):
+    """ write result to cassandra """
+    # result keys: result, result_ok, algorithm (if no exc running ccd), x, y, result_md5, result_produced, inputs_md5
+    # cassandra details, import from pw: pw.DB_CONTACT_POINTS, pw.DB_KEYSPACE, pw.DB_PASSWORD, pw.DB_USERNAME
+    try:
+        print(record)
+    except Exception as e:
+        pw.logger("Exception saving ccd result to cassandra: {}".format(e))
+    return True
+
+
 def detect(input):
     """ Return results of ccd.detect for a given stack of data at a particular x and y """
-    def save(record):
-        """ write result to cassandra """
-        # result keys: result, result_ok, algorithm (if no exc running ccd), x, y, result_md5, result_produced, inputs_md5
-        # cassandra details, import from pw: pw.DB_CONTACT_POINTS, pw.DB_KEYSPACE, pw.DB_PASSWORD, pw.DB_USERNAME
-        try:
-            print(record)
-        except Exception as e:
-            pw.logger("Exception saving ccd result to cassandra: {}".format(e))
-        return True
-
     # input is a tuple: ((pixel x, pixel y), {bands dict}
     _px, _py = input[0][0], input[0][1]
     _bands   = input[1]
@@ -185,7 +186,8 @@ def detect(input):
     output['result_md5'] = hashlib.md5(output['result'].encode('UTF-8')).hexdigest()
     output['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
     output['inputs_md5'] = 'not implemented'
-    return save(output)
+    save_detect(output)
+    return output
 
 
 def spark_job(input_args):
@@ -195,12 +197,16 @@ def spark_job(input_args):
 
         inputs = dict()
         for arg in input_args:
-            _al = arg.split("=")
+            _al = arg.split("=", maxsplit=1)
             inputs[_al[0]] = _al[1]
 
         data = assemble_data(inputs)
         ccd_rdd = sc.parallelize(data, 10000)
         ccd_rdd.foreach(lambda x: detect(x))
-
+        return True
     except Exception as e:
         pw.logger.error('Unrecoverable error ({}) input args: {}'.format(e, input_args))
+        # Throw an exception so when called from the console a non-zero return code is given
+        # this may or may not be necessary
+        raise e
+
