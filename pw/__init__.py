@@ -14,17 +14,7 @@ import sys
 import logging
 import os
 
-
-boolean = lambda b: b.lower() in ['true', '1']
-
 HTTP_PORT         = os.getenv('LPW_HTTP_PORT', 8080)
-RABBIT_HOST       = os.getenv('LPW_RABBIT_HOST')
-RABBIT_PORT       = int(os.getenv('LPW_RABBIT_PORT', '5672'))
-RABBIT_QUEUE      = os.getenv('LPW_RABBIT_QUEUE')
-RABBIT_EXCHANGE   = os.getenv('LPW_RABBIT_EXCHANGE')
-RABBIT_SSL        = boolean(os.getenv('LPW_RABBIT_SSL', 'False'))
-TILE_SPEC_HOST    = os.getenv('LPW_TILE_SPEC_HOST')
-TILE_SPEC_PORT    = int(os.getenv('LPW_TILE_SPEC_PORT', '80'))
 LOG_LEVEL         = os.getenv('LPW_LOG_LEVEL', 'INFO')
 DB_CONTACT_POINTS = os.getenv('DB_CONTACT_POINTS')
 DB_KEYSPACE       = os.getenv('DB_KEYSPACE')

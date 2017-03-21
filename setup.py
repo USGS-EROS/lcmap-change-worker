@@ -79,13 +79,11 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['pika>=0.10.0',
-                      'requests>=2.12.4',
+    install_requires=['requests>=2.12.4',
                       'lcmap-pyccd=={}'.format(__version__),
                       'xarray==0.9.1',
                       'pandas==0.19.2',
-                      'numpy==1.12.0',
-                      'msgpack-python==0.4.8',
+                      'numpy==1.12.0'
                       'pyramid==1.8.2',
                       'cassandra-driver',
     ],
@@ -124,6 +122,6 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    entry_points = {'console_scripts': ['lpw-spark=pw.__worker_main__:main',
-                                        'lpw-test-send=pw.__test_send__:main']}
+    entry_points = {'console_scripts': ['lpw-ready=pw.__worker_main__:main',
+                                        'lpw-spark=pw.__worker_main__:spark']}
     )
