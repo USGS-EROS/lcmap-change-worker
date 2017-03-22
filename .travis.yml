@@ -13,7 +13,9 @@ env:
   - LPW_RABBIT_EXCHANGE: travis.lcmap.pyccd.worker
   - LPW_RABBIT_QUEUE: travis.lcmap.pyccd.worker
 before_install:
-- make docker-deps-up
+#- make docker-deps-up
+  - docker build -t worker/env .
+  - docker run worker/env /bin/sh -c "pip install pytest; cd /app; pytest"
 script: pytest
 install:
 - pip install --upgrade pip setuptools wheel
@@ -21,7 +23,6 @@ install:
 after_success:
 - "/bin/bash deploy"
 - make docker-deps-down
-script: pytest
 notifications:
   slack:
     rooms:
