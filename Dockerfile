@@ -10,7 +10,7 @@ COPY resources /app/resources
 COPY setup.cfg /app
 COPY setup.py /app
 COPY version.py /app
-COPY test /app
+COPY test /app/test
 RUN apt-get update && apt-get install -y zip
 RUN mkdir -p /opt/spark/; cd /opt/spark/; wget http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz
 RUN cd /opt/spark/; tar xf spark-2.1.0-bin-hadoop2.7.tgz; ln -s spark-2.1.0-bin-hadoop2.7 spark
