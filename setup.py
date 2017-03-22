@@ -83,7 +83,7 @@ setup(
                       'lcmap-pyccd=={}'.format(__version__),
                       'xarray==0.9.1',
                       'pandas==0.19.2',
-                      'numpy==1.12.0'
+                      'numpy==1.12.0',
                       'pyramid==1.8.2',
                       'cassandra-driver',
     ],
