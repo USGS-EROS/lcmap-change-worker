@@ -14,6 +14,7 @@ env:
   - LPW_RABBIT_QUEUE: travis.lcmap.pyccd.worker
 before_install:
 #- make docker-deps-up
+  - make get-mesos-lib
   - docker build -f Dockerfile -t 'sparktest' .
   - docker run sparktest /bin/sh -c "pip install pytest; cd /app; pytest"
 script: pytest
