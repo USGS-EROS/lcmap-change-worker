@@ -14,8 +14,8 @@ env:
   - LPW_RABBIT_QUEUE: travis.lcmap.pyccd.worker
 before_install:
 #- make docker-deps-up
-  - docker build -t worker/env .
-  - docker run worker/env /bin/sh -c "pip install pytest; cd /app; pytest"
+  - docker build -f Dockerfile -t 'sparktest' .
+  - docker run sparktest /bin/sh -c "pip install pytest; cd /app; pytest"
 script: pytest
 install:
 - pip install --upgrade pip setuptools wheel
