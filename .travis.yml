@@ -16,8 +16,8 @@ before_install:
 #- make docker-deps-up
   - make get-mesos-lib
   - docker build -f Dockerfile -t 'sparktest' .
+script:
   - docker run sparktest /bin/sh -c "pip install pytest; cd /app; pytest"
-script: pytest
 install:
 - pip install --upgrade pip setuptools wheel
 - pip install -e .
