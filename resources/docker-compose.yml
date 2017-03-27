@@ -1,8 +1,18 @@
 version: "2"
 
+networks:
+  lcmap_landsat:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 192.168.42.0/24
+
 services:
   cassandra:
     image: cassandra:3.9
     container_name: worker-cassandra
     ports:
     - "9042:9042"
+    networks:
+    - lcmap_landsat
