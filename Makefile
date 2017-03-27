@@ -25,7 +25,7 @@ docker-deps-up-nodaemon:
 
 docker-db-test-schema:
 	docker cp test/resources/test.schema.setup.cql worker-cassandra:/
-	docker exec -u root worker-cassandra cqlsh -f test.schema.setup.cql
+	docker exec -u root worker-cassandra CQLSH_HOST=0.0.0.0 cqlsh -f test.schema.setup.cql
 
 docker-deps-down:
 	docker-compose -f resources/docker-compose.yml down
