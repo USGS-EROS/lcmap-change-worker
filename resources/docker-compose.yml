@@ -1,8 +1,8 @@
-version: '2'
+version: "2"
+
 services:
-  rabbit:
-    image: rabbitmq:3-management
+  cassandra:
+    image: cassandra:3.9
+    container_name: worker-cassandra
     ports:
-    - "15672:15672"
-    - "5672:5672"
-    - "5671:5671"
+    - "9042:9042"

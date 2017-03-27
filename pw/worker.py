@@ -11,6 +11,8 @@ from datetime import datetime
 import pw
 from pyspark import SparkContext, SparkConf
 
+from cassandra.cluster import Cluster
+from cassandra.auth import PlainTextAuthProvider
 
 def get_request(url, params=None):
     return requests.get(url, params=params).json()
@@ -142,23 +144,30 @@ def assemble_data(inputs, dimrng=100):
             for _bnd in ('blue', 'green', 'red', 'swir1', 'swir2', 'thermal', 'cfmask', 'nir'):
                 _d[_bnd] = np.array(rbow[_bnd].values[:, x, y])
             _d['dates'] = np.array(rbow['t'].values)
-            px, py = tx+(x * 30), ty+(y * -30)
+            px = tx+(x * 30)
+            py = ty+(y * -30)
             output.append(((px, py), _d))
-    return output
+    return {'tile_x': tx, 'tile_y': ty, 'data': output}
 
 
 def save_detect(record):
     """ write result to cassandra """
-    # result keys: result, result_ok, algorithm (if no exc running ccd), x, y, result_md5, result_produced, inputs_md5
-    # cassandra details, import from pw: pw.DB_CONTACT_POINTS, pw.DB_KEYSPACE, pw.DB_PASSWORD, pw.DB_USERNAME
     try:
-        print(record)
+        auth_provider = PlainTextAuthProvider(username=pw.DB_USERNAME, password=pw.DB_PASSWORD)
+        cluster = Cluster(pw.DB_CONTACT_POINTS.split(','), auth_provider=auth_provider)
+        session = cluster.connect()
+        insrt_stmt = "INSERT INTO {}.results (y, tile_x, tile_y, algorithm, x, result_ok, inputs_md5, result, " \
+                     "result_produced, result_md5) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(pw.DB_KEYSPACE)
+        session.execute(insrt_stmt, (record['y'], record['tile_x'], record['tile_y'], record['algorithm'], record['x'],
+                                     record['result_ok'], record['inputs_md5'], record['result'],
+                                     record['result_produced'], record['result_md5']))
     except Exception as e:
-        pw.logger("Exception saving ccd result to cassandra: {}".format(e))
+        pw.logger.error("Exception saving ccd result to cassandra: {}".format(e))
+        raise e
     return True
 
 
-def detect(input):
+def detect(input, tile_x, tile_y):
     """ Return results of ccd.detect for a given stack of data at a particular x and y """
     # input is a tuple: ((pixel x, pixel y), {bands dict}
     _px, _py = input[0][0], input[0][1]
@@ -177,6 +186,8 @@ def detect(input):
         output['result'] = json.dumps(simplify_detect_results(_results))
         output['result_ok'] = True
         output['algorithm'] = _results['algorithm']
+        output['tile_x'] = tile_x
+        output['tile_y'] = tile_y
     except Exception as e:
         pw.logger.error("Exception running ccd.detect: {}".format(e))
         output['result'] = ''
@@ -201,8 +212,8 @@ def spark_job(input_args):
             inputs[_al[0]] = _al[1]
 
         data = assemble_data(inputs)
-        ccd_rdd = sc.parallelize(data, 10000)
-        ccd_rdd.foreach(lambda x: detect(x))
+        ccd_rdd = sc.parallelize(data['data'], 10000)
+        ccd_rdd.foreach(lambda x: detect(x, data['tile_x'], data['tile_y']))
         return True
     except Exception as e:
         pw.logger.error('Unrecoverable error ({}) input args: {}'.format(e, input_args))

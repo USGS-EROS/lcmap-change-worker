@@ -12,10 +12,10 @@ import os
 
 HTTP_PORT         = os.getenv('LPW_HTTP_PORT', 8080)
 LOG_LEVEL         = os.getenv('LPW_LOG_LEVEL', 'INFO')
-DB_CONTACT_POINTS = os.getenv('DB_CONTACT_POINTS')
-DB_KEYSPACE       = os.getenv('DB_KEYSPACE')
-DB_PASSWORD       = os.getenv('DB_PASSWORD')
-DB_USERNAME       = os.getenv('DB_USERNAME')
+DB_CONTACT_POINTS = os.getenv('DB_CONTACT_POINTS', '0.0.0.0')
+DB_KEYSPACE       = os.getenv('DB_KEYSPACE', 'lcmap_changes_local')
+DB_PASSWORD       = os.getenv('DB_PASSWORD', '')
+DB_USERNAME       = os.getenv('DB_USERNAME', '')
 
 RESULT_ROUTING_KEY = ccd_alg_version
 

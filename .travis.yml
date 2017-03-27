@@ -13,6 +13,8 @@ env:
   - LPW_RABBIT_EXCHANGE: travis.lcmap.pyccd.worker
   - LPW_RABBIT_QUEUE: travis.lcmap.pyccd.worker
 before_install:
+  - make docker-deps-up
+  - make docker-db-test-schema
   - make get-mesos-lib
   - docker build -f Dockerfile -t 'sparktest' .
 script:

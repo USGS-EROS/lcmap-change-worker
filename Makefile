@@ -23,6 +23,10 @@ docker-deps-up:
 docker-deps-up-nodaemon:
 	docker-compose -f resources/docker-compose.yml up
 
+docker-db-test-schema:
+	docker cp test/resources/test.schema.setup.cql worker-cassandra:/
+	docker exec worker-cassandra cqlsh -f test.schema.setup.cql
+
 docker-deps-down:
 	docker-compose -f resources/docker-compose.yml down
 

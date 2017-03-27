@@ -118,24 +118,23 @@ def test_assemble_data(monkeypatch):
     inputs = shared.good_input_data
     data = worker.assemble_data(inputs)
 
-    assert len(data) == 10000
-    assert isinstance(data[0][0], tuple)
-    assert isinstance(data[0][1], dict)
-    assert set(data[0][1].keys()) == {'nir', 'cfmask', 'swir2', 'thermal', 'red', 'blue', 'dates', 'green', 'swir1'}
+    assert len(data['data']) == 10000
+    assert isinstance(data['data'][0][0], tuple)
+    assert isinstance(data['data'][0][1], dict)
+    assert set(data['data'][0][1].keys()) == {'nir', 'cfmask', 'swir2', 'thermal', 'red', 'blue', 'dates', 'green', 'swir1'}
 
 
 def test_detect(monkeypatch):
     # actually run ccd.detect
     monkeypatch.setattr('pw.worker.spectral_map', mock_spectral_map)
     monkeypatch.setattr('pw.worker.get_request', mock_get_tiles_request)
-    monkeypatch.setattr('pw.worker.save_detect', lambda x: True)
 
     msg = shared.good_input_data
     data = worker.assemble_data(msg)
-    resp = worker.detect(data[0])
+    resp = worker.detect(data['data'][1], data['tile_x'], data['tile_y'])
 
     assert isinstance(resp, dict)
-    assert set(resp.keys()) == {'result', 'result_ok', 'algorithm', 'x', 'y', 'result_md5', 'result_produced', 'inputs_md5'}
+    assert set(resp.keys()) == {'result', 'result_ok', 'algorithm', 'x', 'y', 'result_md5', 'result_produced', 'inputs_md5', 'tile_x', 'tile_y'}
     assert json.loads(resp['result'])['change_models'][0]['start_day'] == 724389
     assert json.loads(resp['result'])['change_models'][0]['curve_qa'] == 8
 
@@ -148,7 +147,7 @@ def test_detect_error(monkeypatch):
 
     msg = shared.good_input_data
     data = worker.assemble_data(msg)
-    resp = worker.detect(data[0])
+    resp = worker.detect(data['data'], data['tile_x'], data['tile_y'])
 
     assert isinstance(resp, dict)
     assert set(resp.keys()) == {'result', 'result_ok', 'x', 'y', 'result_md5', 'result_produced', 'inputs_md5'}
@@ -169,6 +168,12 @@ def test_spark_job(monkeypatch):
     # need to figure out the heap space issue with the rdd in test
     assert True
 
+
+def test_save_detect():
+    results = {'y': 999888, 'result_ok': True, 'algorithm': 'pyccd-1.1.0', 'inputs_md5': 'xoxoxo', 'tile_x':-123456,
+               'result': 'a whole bunch of result', 'result_produced': '2014-07-30T06:51:36Z', 'result_md5': 'result_md5',
+               'x': -134567, 'tile_y': 888999}
+    assert worker.save_detect(results)
 
 
 
