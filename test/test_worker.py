@@ -128,6 +128,7 @@ def test_detect(monkeypatch):
     # actually run ccd.detect
     monkeypatch.setattr('pw.worker.spectral_map', mock_spectral_map)
     monkeypatch.setattr('pw.worker.get_request', mock_get_tiles_request)
+    monkeypatch.setattr('pw.worker.save_detect', lambda x: True)
 
     msg = shared.good_input_data
     data = worker.assemble_data(msg)
