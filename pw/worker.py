@@ -104,15 +104,19 @@ def rainbow(x, y, t, specs_url, tiles_url, requested_ubids):
 def detect(rainbow, x, y):
     """ Return results of ccd.detect for a given stack of data at a particular x and y """
     try:
+        # Beware: rainbow contains stacks of row-major two-dimensional arrays
+        # for each band of data. These variables are used to make the order
+        # of access clear.
+        row, col = y, x
         rainbow_date_array = np.array(rainbow['t'].values)
-        return ccd.detect(blues=np.array(rainbow['blue'].values[:, x, y]),
-                          greens=np.array(rainbow['green'].values[:, x, y]),
-                          reds=np.array(rainbow['red'].values[:, x, y]),
-                          nirs=np.array(rainbow['nir'].values[:, x, y]),
-                          swir1s=np.array(rainbow['swir1'].values[:, x, y]),
-                          swir2s=np.array(rainbow['swir2'].values[:, x, y]),
-                          thermals=np.array(rainbow['thermal'].values[:, x, y]),
-                          quality=np.array(rainbow['cfmask'].values[:, x, y]),
+        return ccd.detect(blues=np.array(rainbow['blue'].values[:, row, col]),
+                          greens=np.array(rainbow['green'].values[:, row, col]),
+                          reds=np.array(rainbow['red'].values[:, row, col]),
+                          nirs=np.array(rainbow['nir'].values[:, row, col]),
+                          swir1s=np.array(rainbow['swir1'].values[:, row, col]),
+                          swir2s=np.array(rainbow['swir2'].values[:, row, col]),
+                          thermals=np.array(rainbow['thermal'].values[:, row, col]),
+                          quality=np.array(rainbow['cfmask'].values[:, row, col]),
                           dates=[dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array])
     except Exception as e:
         raise Exception(e)
