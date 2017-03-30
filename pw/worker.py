@@ -140,9 +140,10 @@ def assemble_data(inputs, dimrng=100):
     rbow = rainbow(tx, ty, dates, s_url, t_url, ubids)
     for x in range(0, dimrng):
         for y in range(0, dimrng):
+            row, col = y, x
             _d = dict()
             for _bnd in ('blue', 'green', 'red', 'swir1', 'swir2', 'thermal', 'cfmask', 'nir'):
-                _d[_bnd] = np.array(rbow[_bnd].values[:, x, y])
+                _d[_bnd] = np.array(rbow[_bnd].values[:, row, col])
             _d['dates'] = np.array(rbow['t'].values)
             px = tx+(x * 30)
             py = ty+(y * -30)
