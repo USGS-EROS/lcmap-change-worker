@@ -2,7 +2,7 @@ CONTAINERS=`docker ps -a -q`
 IMAGES=`docker images -q`
 
 # pull the tag from version.py
-TAG=0.1.0
+TAG=0.2.0
 WORKERIMAGE=lcmap-pyccd-worker:$(TAG)
 
 CON_NAME=container.fu

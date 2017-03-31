@@ -1,5 +1,12 @@
-FROM python:3.5
+FROM usgseros/mesos-spark:latest
 MAINTAINER USGS LCMAP http://eros.usgs.gov
+
+# python3-pip install setuptools, which is req'd for install of lcmap-pyccd-worker
+RUN apt-get update && apt-get install -y python3-pip liblapack-dev libblas-dev gfortran
+
+# these two packages are included as dependencies in setup.py for the project,
+# but the project fails to install unless they are installed beforehand
+RUN pip3 install numpy scipy
 
 RUN mkdir /app
 WORKDIR /app
@@ -12,15 +19,6 @@ COPY setup.py /app
 COPY version.py /app
 COPY test /app/test
 COPY data /app/data
-RUN apt-get update && apt-get install -y zip
-RUN mkdir -p /opt/spark/; cd /opt/spark/; wget http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz
-RUN cd /opt/spark/; tar xf spark-2.1.0-bin-hadoop2.7.tgz; ln -s spark-2.1.0-bin-hadoop2.7 spark
-RUN cd /opt/spark/spark/python/lib; unzip pyspark.zip;  unzip py4j-0.10.4-src.zip
-ENV PYTHONPATH=/opt/spark/spark/python/lib
-COPY libmesos-1.1.0.so /usr/local/lib/
-RUN ln -s /usr/local/lib/libmesos-1.1.0.so /usr/lib/libmesos.so
-RUN pip install --upgrade pip
-RUN pip install -e.
-ENV SPARK_HOME=/opt/spark/spark-2.0.2-bin-hadoop2.7
-ENV WORKDIR=/opt/spark/spark-2.0.2-bin-hadoop2.7
-WORKDIR /opt/spark/spark-2.0.2-bin-hadoop2.7
+RUN pip3 install --upgrade pip
+RUN pip3 install -e.
+
