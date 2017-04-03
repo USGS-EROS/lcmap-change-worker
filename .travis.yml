@@ -13,7 +13,6 @@ before_install:
   - make docker-deps-up
   - sleep 20
   - make docker-db-test-schema
-  - make get-mesos-lib
   - docker build -f Dockerfile -t 'sparktest' .
 script:
   - docker run sparktest /bin/sh -c "cd /app; pip install .[test]; pytest"
