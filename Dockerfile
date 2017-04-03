@@ -19,6 +19,5 @@ COPY setup.py /app
 COPY version.py /app
 COPY test /app/test
 COPY data /app/data
-RUN pip3 install --upgrade pip
-RUN pip3 install -e.
+RUN pip3 install -e .
 

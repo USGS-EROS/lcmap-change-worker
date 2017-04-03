@@ -2,15 +2,12 @@
 # ex: import pw
 #     pw.send(...)
 from .worker import spark_job
-from .http import run_http
-from .http import terminate_http
 from ccd import algorithm as ccd_alg_version
 
 import sys
 import logging
 import os
 
-HTTP_PORT         = os.getenv('LPW_HTTP_PORT', 8080)
 LOG_LEVEL         = os.getenv('LPW_LOG_LEVEL', 'INFO')
 DB_CONTACT_POINTS = os.getenv('DB_CONTACT_POINTS', '0.0.0.0')
 DB_KEYSPACE       = os.getenv('DB_KEYSPACE', 'lcmap_changes_local')

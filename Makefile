@@ -2,16 +2,14 @@ CONTAINERS=`docker ps -a -q`
 IMAGES=`docker images -q`
 
 # pull the tag from version.py
-TAG=0.2.0
+TAG=`cat version.py | grep '__version__ = ' | sed -e 's/__version__ = //g' | sed -e "s/'//g"`
 WORKERIMAGE=lcmap-pyccd-worker:$(TAG)
 
-CON_NAME=container.fu
-get-mesos-lib:
-	docker run -it --name $(CON_NAME) mesosphere/mesos:1.1.0-1.0.104.rc3.ubuntu1404 echo '$(CON_NAME)'
-	docker cp `docker ps -aq --filter "name=$(CON_NAME)"`:/usr/lib/libmesos-1.1.0.so .
-	docker rm `docker ps -aq --filter "name=$(CON_NAME)"`
+vertest:
+	echo $(TAG)
+	echo $(WORKERIMAGE)
 
-docker-build: get-mesos-lib
+docker-build:
 	docker build -t $(WORKERIMAGE) $(PWD)
 
 docker-shell:

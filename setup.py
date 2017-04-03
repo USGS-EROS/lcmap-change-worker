@@ -84,7 +84,6 @@ setup(
                       'xarray==0.9.1',
                       'pandas==0.19.2',
                       'numpy>=1.12.0',
-                      'pyramid==1.8.2',
                       'cassandra-driver',
     ],
 
@@ -123,5 +122,5 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    entry_points = {'console_scripts': ['lpw-ready=pw.__worker_main__:main',]}
+    # entry_points = {'console_scripts': ['lpw-ready=pw.__worker_main__:main',]}
     )
