@@ -15,7 +15,7 @@ before_install:
   - make docker-db-test-schema
   - docker build -f Dockerfile -t 'sparktest' .
 script:
-  - docker run sparktest /bin/sh -c "cd /app; pip install .[test]; pytest"
+  - docker run sparktest /bin/sh -c "cd /app; pip3 install .[test]; pytest"
 install:
 - pip install --upgrade pip setuptools wheel
 - pip install -e .
