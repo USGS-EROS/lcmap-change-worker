@@ -2,12 +2,8 @@ FROM usgseros/mesos-spark:latest
 MAINTAINER USGS LCMAP http://eros.usgs.gov
 
 # python3-pip install setuptools, which is req'd for install of lcmap-pyccd-worker
-RUN apt-get update && apt-get install -y python3-pip liblapack-dev libblas-dev gfortran
-
-# these two packages are included as dependencies in setup.py for the project,
-# but the project fails to install unless they are installed beforehand
-RUN pip3 install numpy scipy
-
+# liblapack, libblas & gfortran are needed for scipy.  python3-dev is needed for numpy
+RUN apt-get update && apt-get install -y python3-pip python3-dev liblapack-dev libblas-dev gfortran
 RUN mkdir /app
 WORKDIR /app
 COPY pw /app/pw
