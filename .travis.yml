@@ -16,7 +16,7 @@ before_install:
   - make docker-db-test-schema
 
 script:
-   - docker build -t 'test'
+   - docker build -t 'test' .
 
 install:
 
