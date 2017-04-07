@@ -18,7 +18,6 @@ COPY data /app/data
 RUN wget -O Miniconda3-latest.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh; chmod 755 Miniconda3-latest.sh; 
 RUN ./Miniconda3-latest.sh -b;
 ENV PATH="/root/miniconda3/bin:${PATH}"
-RUN conda install python=3.5 numpy scipy pandas --yes
-
+RUN conda config --add channels conda-forge;
+RUN conda install python=3.5 numpy scipy pandas cassandra-driver --yes
 RUN pip install -e .
-RUN which python; python --version;
