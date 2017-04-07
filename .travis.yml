@@ -11,9 +11,9 @@ env:
   - secure: coDxReBaTwaVif5sANGMWAsAj5qul0miZtJxY1aihw+bgvqQVIM4Hlxs8EOhIwlARWxEq0CugZir/B2kWvMemZqd/1Ffn8gIveXVDel/BUcOOw4/uPCZTdo0EuOCUO7KqCgJ7w5m/rYM2wjMsthpMADVWuHGT5ajR6+vm5IxxxazQog0d/oShLjHQQubd8CBxmYWm8PrIIC2Liz2XXY+27CBMrWD4R6KTP2bIRqUbNXs9sXA3LOaGGRrocD64EjRaO41CApO8V76M3SqKHTUe4W0EIx+cMKi5ZOyixRb+jO2CExaiYy2wfnSPMN8RFkudQRQWB/otgKU6uO7Y+5K/V5XfvbT4BphW9hHrRUEexRa+KjoG8U8F4UYuqoNUTQn0IVq6cU7MU2sUqnM72WNAUAIzD+TFmU77bCl+T9TOT2esW6UG/DSjhCXEShAa3UfO9/XlEwjS1LaiXdGl7dxPoO7GEbsqGQS8XQtXGU7tXbZGDSkA/j28e0OGwcZXVQrZ1e5lbPMUWNZEgf4/8GsZ2z7BlDaSigSHFtmOLHarNxWiiyRF/5bkrTXqIkdQrdGw7s7gtuJUikoTHvi1CBAJAPggB1pGgw49gzQNKFolFqy/8riDMm1za/dGuscmJ6nwJCsB9NhmqCmNPbuXOBW0XceWzE4RHbX0+0jyu2AJtE=
 
 before_install:
-  - make docker-deps-up
-  - sleep 20
-  - make docker-db-test-schema
+#  - make docker-deps-up
+#  - sleep 20
+#  - make docker-db-test-schema
 
 script:
    - docker build -t 'test' .
@@ -22,7 +22,7 @@ install:
 
 after_success:
   - "/bin/bash deploy"
-  - make docker-deps-down
+#  - make docker-deps-down
 
 notifications:
   slack:
