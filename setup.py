@@ -81,9 +81,9 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['requests>=2.12.4',
                       'lcmap-pyccd=={}'.format(__version__),
-                      'xarray==0.9.1',
-                      'pandas==0.19.2',
-                      'numpy>=1.12.0',
+                      'xarray>=0.9.1',
+                      'pandas>=0.19.2',
+                      'numpy>=1.10.0',
                       'cassandra-driver',
     ],
 
