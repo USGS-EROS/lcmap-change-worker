@@ -21,3 +21,5 @@ ENV PATH="/root/miniconda3/bin:${PATH}"
 RUN conda config --add channels conda-forge;
 RUN conda install python=3.5 numpy scipy pandas cassandra-driver --yes
 RUN pip install -e .
+RUN pip install -e .[test]
+RUN pytest
