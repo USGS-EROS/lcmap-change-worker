@@ -51,6 +51,13 @@ Run tests:
    # run pytest
    $ LPW_RABBIT_HOST=localhost LPW_RABBIT_EXCHANGE=test.lcmap.changes.worker LPW_RABBIT_QUEUE=test.lcmap.changes.worker LPW_RABBIT_RESULT_ROUTING_KEY=change-detection_result pytest
 ```
+
+All tests run at Docker file build time:
+
+```bash
+   $ docker build -t tmp-testing-container .
+```
+
 ## Deploying
 Available from Docker Hub https://hub.docker.com/r/usgseros/lcmap-pyccd-worker/
 ```bash
