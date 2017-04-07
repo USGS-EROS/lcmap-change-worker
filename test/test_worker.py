@@ -30,7 +30,7 @@ def mock_get_spectral_request(url):
 def mock_get_tiles_request(url, params):
     # method for mocking tiles data response
     ubid = params['ubid'].replace('/', '-')
-    fname = "ata/tiles/band-json/*_{}_{}_{}.json".format(params['x'], params['y'], ubid)
+    fname = "data/tiles/band-json/*_{}_{}_{}.json".format(params['x'], params['y'], ubid)
     jfile = glob.glob(fname)[0]
     return fetch_json(jfile)
 
