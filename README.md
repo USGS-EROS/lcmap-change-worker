@@ -19,6 +19,17 @@ landsat-pyccd-worker is configurable with the following environment variables
 | Variable | Default | Description |
 | --- | --- | --- |
 | `LPW_LOG_LEVEL` | INFO | Logging Level.  INFO/DEBUG/WARNING/ERROR/CRITICAL |
+| `DB_CONTACT_POINTS` | 0.0.0.0 | Host IP for Cassandra instance |
+| `DB_KEYSPACE` | '' | Desired Cassandra keyspace |
+| `DB_PASSWORD` | '' | Password for Cassandra instance |
+| `DB_USERNAME` | '' | Username for Cassandra instance |
+| `LPW_MESOS_MASTER` | | Mesos master host name (include port) |
+| `LPW_EXECUTOR_IMAGE` | | Docker image to run Spark Executor in |
+| `LPW_EXECUTOR_CORES` | | Number of cores alotted to each Spark Executor |
+| `LPW_EXECUTOR_FORCE_PULL_IMAGE` | 'true' | Force pull image for Spark Executor |
+| `LPW_SPARK_PARALLELIZATION` | | Number of items data should be divided into for parallel execution |
+| `PYSPARK_DRIVER_PYTHON` | | Which python the spark driver should use |
+| `PYSPARK_PYTHON` | | Which python the spark executor should use |
 
 ## Developing & Testing
 Get the local environment ready for development and testing.

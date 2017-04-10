@@ -204,7 +204,12 @@ def detect(input, tile_x, tile_y):
 
 def spark_job(input_args):
     try:
-        conf = (SparkConf().setAppName("lcmap-gen-{}".format(datetime.now().strftime('%Y-%m-%d-%I:%M'))))
+        conf = (SparkConf().setAppName("lcmap-gen-{}".format(datetime.now().strftime('%Y-%m-%d-%I:%M')))
+                .setMaster(pw.LPW_MESOS_MASTER)
+                .set("spark.mesos.executor.docker.image", pw.LPW_EXECUTOR_IMAGE)
+                .set("spark.executor.cores", pw.LPW_EXECUTOR_CORES)
+                .set("spark.mesos.executor.docker.forcePullImage", pw.LPW_EXECUTOR_FORCE_PULL_IMAGE))
+
         sc = SparkContext(conf=conf)
 
         inputs = dict()
@@ -213,8 +218,9 @@ def spark_job(input_args):
             inputs[_al[0]] = _al[1]
 
         data = assemble_data(inputs)
-        ccd_rdd = sc.parallelize(data['data'], 10000)
-        ccd_rdd.foreach(lambda x: detect(x, data['tile_x'], data['tile_y']))
+        ccd_rdd = sc.parallelize(data['data'], int(pw.LPW_SPARK_PARALLELIZATION))
+        # The first element of x is a tuple of the x and y coordinates
+        ccd_rdd.foreach(lambda x: detect(x, x[0][0], x[0][1]))
         return True
     except Exception as e:
         pw.logger.error('Unrecoverable error ({}) input args: {}'.format(e, input_args))

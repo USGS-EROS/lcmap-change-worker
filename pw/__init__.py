@@ -8,11 +8,16 @@ import sys
 import logging
 import os
 
-LOG_LEVEL         = os.getenv('LPW_LOG_LEVEL', 'INFO')
-DB_CONTACT_POINTS = os.getenv('DB_CONTACT_POINTS', '0.0.0.0')
-DB_KEYSPACE       = os.getenv('DB_KEYSPACE', 'lcmap_changes_local')
-DB_PASSWORD       = os.getenv('DB_PASSWORD', '')
-DB_USERNAME       = os.getenv('DB_USERNAME', '')
+LOG_LEVEL                     = os.getenv('LPW_LOG_LEVEL', 'INFO')
+DB_CONTACT_POINTS             = os.getenv('DB_CONTACT_POINTS', '0.0.0.0')
+DB_KEYSPACE                   = os.getenv('DB_KEYSPACE', 'lcmap_changes_local')
+DB_PASSWORD                   = os.getenv('DB_PASSWORD', '')
+DB_USERNAME                   = os.getenv('DB_USERNAME', '')
+LPW_MESOS_MASTER              = os.getenv('LPW_MESOS_MASTER')
+LPW_EXECUTOR_IMAGE            = os.getenv('LPW_EXECUTOR_IMAGE')
+LPW_EXECUTOR_CORES            = os.getenv('LPW_EXECUTOR_CORES')
+LPW_EXECUTOR_FORCE_PULL_IMAGE = os.getenv('LPW_EXECUTOR_FORCE_PULL_IMAGE', 'true')
+LPW_SPARK_PARALLELIZATION     = os.getenv('LPW_SPARK_PARALLELIZATION')
 
 RESULT_ROUTING_KEY = ccd_alg_version
 
