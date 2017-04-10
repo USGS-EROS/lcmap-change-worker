@@ -13,7 +13,7 @@ COPY setup.py /app
 COPY version.py /app
 COPY test /app/test
 COPY data /app/data
-COPY sparkdemo_*ipynb /app
+COPY sparkdemo_*ipynb /app/
 #preposition numpy with conda to avoid compiling from scratch
 RUN wget -O Miniconda3-latest.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh; chmod 755 Miniconda3-latest.sh; 
 RUN ./Miniconda3-latest.sh -b;
