@@ -109,15 +109,17 @@ def detect(rainbow, x, y):
         # of access clear.
         row, col = y, x
         rainbow_date_array = np.array(rainbow['t'].values)
-        return ccd.detect(blues=np.array(rainbow['blue'].values[:, row, col]),
-                          greens=np.array(rainbow['green'].values[:, row, col]),
-                          reds=np.array(rainbow['red'].values[:, row, col]),
-                          nirs=np.array(rainbow['nir'].values[:, row, col]),
-                          swir1s=np.array(rainbow['swir1'].values[:, row, col]),
-                          swir2s=np.array(rainbow['swir2'].values[:, row, col]),
-                          thermals=np.array(rainbow['thermal'].values[:, row, col]),
-                          quality=np.array(rainbow['cfmask'].values[:, row, col]),
-                          dates=[dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array])
+        # according to lcmap-pyccd README, values expected in the following order:
+        # ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
+        return ccd.detect([dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array],
+                          np.array(rainbow['blue'].values[:, row, col]),
+                          np.array(rainbow['green'].values[:, row, col]),
+                          np.array(rainbow['red'].values[:, row, col]),
+                          np.array(rainbow['nir'].values[:, row, col]),
+                          np.array(rainbow['swir1'].values[:, row, col]),
+                          np.array(rainbow['swir2'].values[:, row, col]),
+                          np.array(rainbow['thermal'].values[:, row, col]),
+                          np.array(rainbow['cfmask'].values[:, row, col]))
     except Exception as e:
         raise Exception(e)
 

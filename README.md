@@ -46,7 +46,7 @@ Get the local environment ready for development and testing.
 Run tests:
 ```bash
    # in a separate shell
-   $ make docker-deps-up-no-daemon
+   $ make docker-deps-up-nodaemon
    # export required env variables
    # run pytest
    $ LPW_RABBIT_HOST=localhost LPW_RABBIT_EXCHANGE=test.lcmap.changes.worker LPW_RABBIT_QUEUE=test.lcmap.changes.worker LPW_RABBIT_RESULT_ROUTING_KEY=change-detection_result pytest
