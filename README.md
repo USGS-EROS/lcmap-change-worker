@@ -64,3 +64,45 @@ Available from Docker Hub https://hub.docker.com/r/usgseros/lcmap-pyccd-worker/
 ```bash
 docker pull usgseros/lcmap-pyccd-worker
 ```
+
+Backing services are available from the lcmap-services project, utilizing docker-compose 3
+```bash
+git clone https://github.com/USGS-EROS/lcmap-services
+# You may or may not need to declare the HOSTNAME env variable depending on your OS
+cd lcmap-services; HOSTNAME=<yourmachine> docker-compose up
+```
+
+The backing mesos-master and mesos-slave from the lcmap-services communicate over the lcmapservices_lcmap
+network, when you start an lcmap-pyccd-worker container, you need to tell it to use this network.
+You also need to expose ports for accessing any jupyter notebooks initiated from the container.
+ ```bash
+ docker run -it -p 0.0.0.0:8888:8888 --network lcmapservices_lcmap usgseros/lcmap-pyccd-worker:spark /bin/bash
+ ```
+
+Once you are in the lcmap-pyccd-worker container, you'll need to set some configuration values in the
+environment before launching either of the provided jupyter notebooks.
+```bash
+export PYSPARK_DRIVER_PYTHON=python3
+export PYSPARK_PYTHON=python3
+export LPW_MESOS_MASTER=mesos://< the ip address of the mesos-master started by lcmap-services >:5050                                                                                                                                                          
+export LPW_EXECUTOR_IMAGE=usgseros/lcmap-pyccd-worker:spark
+export LPW_EXECUTOR_CORES=4
+export LPW_EXECUTOR_FORCE_PULL_IMAGE=true
+export LPW_SPARK_PARALLELIZATION=2
+```
+
+Now you'll be ready to start either of the jupyter notebooks.
+```bash
+jupyter notebook --ip=0.0.0.0 --browser=none --allow-root
+```
+
+From the system thats running the lcmap-pyccd-container, you'll be able to access the jupyter notebooks
+at http://127.0.0.1:8888
+They are named sparkdemo_from_data.ipynb and sparkdemo_from_http.ipynb.  The first operates on data provided
+from a submodule under the /data directory when the project was cloned.  The latter will pull tile and spectral
+data from a web api if it is available.
+
+The Mesos master UI will be accessible from http://127.0.0.1:5050/
+
+
+
