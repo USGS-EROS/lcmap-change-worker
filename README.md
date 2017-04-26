@@ -29,6 +29,7 @@ landsat-pyccd-worker is configurable with the following environment variables
 | `LPW_RABBIT_EXCHANGE` | local.lcmap.pyccd.worker | Exchange for LPW to publish messages |
 | `LPW_RABBIT_SSL` | False | Enable/Disable SSL.  True/False |
 | `LPW_LOG_LEVEL` | INFO | Logging Level.  INFO/DEBUG/WARNING/ERROR/CRITICAL |
+| `LPW_QA_BIT_PACKED` | True | QA band is bit packed
 
 ## Developing & Testing
 Get the local environment ready for development and testing.
@@ -49,7 +50,7 @@ Run tests:
    $ make docker-deps-up-nodaemon
    # export required env variables
    # run pytest
-   $ LPW_RABBIT_HOST=localhost LPW_RABBIT_EXCHANGE=test.lcmap.changes.worker LPW_RABBIT_QUEUE=test.lcmap.changes.worker LPW_RABBIT_RESULT_ROUTING_KEY=change-detection_result pytest
+   $ LPW_RABBIT_HOST=localhost LPW_QA_BIT_PACKED=False LPW_RABBIT_EXCHANGE=test.lcmap.changes.worker LPW_RABBIT_QUEUE=test.lcmap.changes.worker LPW_RABBIT_RESULT_ROUTING_KEY=change-detection_result pytest
 ```
 ## Deploying
 Available from Docker Hub https://hub.docker.com/r/usgseros/lcmap-pyccd-worker/

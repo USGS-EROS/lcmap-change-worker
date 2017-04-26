@@ -28,7 +28,7 @@ def spectral_map(specs_url):
     try:
         for spectra in _map:
             url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
-            pw.logger.debug("tile-specs url:{}".format(url))
+            pw.logger.debug("chip-specs url:{}".format(url))
             resp = get_request(url)
             # value needs to be a list, make it unique using set()
             _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
@@ -111,6 +111,17 @@ def detect(rainbow, x, y):
         rainbow_date_array = np.array(rainbow['t'].values)
         # according to lcmap-pyccd README, values expected in the following order:
         # ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
+
+        qabp = True if pw.QA_BIT_PACKED == 'True' else False
+
+        ccd_params = {'QA_BITPACKED': qabp,
+                      'QA_FILL': 255,
+                      'QA_CLEAR': 0,
+                      'QA_WATER': 1,
+                      'QA_SHADOW': 2,
+                      'QA_SNOW': 3,
+                      'QA_CLOUD': 4}
+
         return ccd.detect([dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array],
                           np.array(rainbow['blue'].values[:, row, col]),
                           np.array(rainbow['green'].values[:, row, col]),
@@ -119,7 +130,8 @@ def detect(rainbow, x, y):
                           np.array(rainbow['swir1'].values[:, row, col]),
                           np.array(rainbow['swir2'].values[:, row, col]),
                           np.array(rainbow['thermal'].values[:, row, col]),
-                          np.array(rainbow['cfmask'].values[:, row, col]))
+                          np.array(rainbow['cfmask'].values[:, row, col]),
+                          params=ccd_params)
     except Exception as e:
         raise Exception(e)
 
@@ -162,7 +174,7 @@ def run(msg, dimrng=100):
         tile_x    = msg['tile_x']
         tile_y    = msg['tile_y']
         tiles_url = msg['inputs_url'].split('?')[0]
-        specs_url = tiles_url.replace('/tiles', '/tile-specs')
+        specs_url = tiles_url.replace('/chips', '/chip-specs')
 
         querystr_list = msg['inputs_url'].split('?')[1].split('&')
         requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
@@ -172,9 +184,9 @@ def run(msg, dimrng=100):
     rbow = rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
 
     # hard coding dimensions for the moment,
-    # it should come from a tile-spec query
+    # it should come from a chip-spec query
     # {'data_shape': [100, 100], 'pixel_x': 30, 'pixel_y': -30}
-    # tile-spec query results should then be provided to detect()
+    # chip-spec query results should then be provided to detect()
     for x in range(0, dimrng):
         for y in range(0, dimrng):
             px, py = (30, -30)

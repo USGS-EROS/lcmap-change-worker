@@ -8,8 +8,8 @@ from . import shared
 # some constants
 band = 'blue'
 ubid = 'LANDSAT_7/ETM/sr_band1'
-tile_specs_url = 'http://localhost/landsat/tile-specs'
-tiles_json = 'data/tiles/band-json/{}_-1821585_2891595_{}.json'.format(band, ubid.replace('/', '-'))
+specs_url = 'http://localhost/landsat/tile-specs'
+chips_json = 'data/tiles/band-json/{}_-1821585_2891595_{}.json'.format(band, ubid.replace('/', '-'))
 
 
 def fetch_json(jsonfile):
@@ -48,7 +48,7 @@ def mock_spectral_map(url):
 def test_spectral_map(monkeypatch):
     # test creating spectral map
     monkeypatch.setattr('pw.worker.get_request', mock_get_spectral_request)
-    spec_map, spec_whole = worker.spectral_map(tile_specs_url)
+    spec_map, spec_whole = worker.spectral_map(specs_url)
     assert set(spec_map.keys()) == shared.spect_map_keys
     assert len(spec_whole) == 75
     for i in spec_whole:
@@ -63,8 +63,8 @@ def test_dtstr_to_ordinal():
 def test_as_numpy_array(monkeypatch):
     # test converting landsat dataset into numpy array
     monkeypatch.setattr('pw.worker.get_request', mock_get_spectral_request)
-    _map, spec_whole = worker.spectral_map(tile_specs_url)
-    tiles = fetch_json(tiles_json)
+    _map, spec_whole = worker.spectral_map(specs_url)
+    tiles = fetch_json(chips_json)
 
     uniq_specs = []
     for spec in spec_whole:
@@ -81,8 +81,8 @@ def test_as_numpy_array(monkeypatch):
 def test_landsat_dataset(monkeypatch):
     # test assembling landsat data
     monkeypatch.setattr('pw.worker.get_request', mock_get_spectral_request)
-    _map, spec_whole = worker.spectral_map(tile_specs_url)
-    tiles = fetch_json(tiles_json)
+    _map, spec_whole = worker.spectral_map(specs_url)
+    tiles = fetch_json(chips_json)
 
     resp = worker.landsat_dataset(band, ubid, spec_whole, tiles)
     assert isinstance(resp, xr.Dataset)
