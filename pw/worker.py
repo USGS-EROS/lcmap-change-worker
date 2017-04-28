@@ -21,21 +21,21 @@ def get_request(url, params=None):
 def spectral_map(specs_url):
     """ Return a dict of sensor bands keyed to their respective spectrum """
     _spec_map = dict()
-    _map = {'thermal': 'toa -11', 'cfmask': '+cfmask -conf'}
-    for bnd in ('blue', 'green', 'red', 'nir', 'swir1', 'swir2'):
-        _map[bnd] = 'sr'
+    _map = {'blue': ('sr', 'blue'), 'green': ('sr', 'green'), 'red': ('sr', 'red'), 'nir': ('sr', 'nir'),
+               'swir1': ('sr', 'swir1'), 'swir2': ('sr', 'swir2'), 'thermal': ('ta', 'thermal'),
+               'cfmask': ('pixel', 'qa')}
 
     try:
         for spectra in _map:
-            url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
-            pw.logger.debug("chip-specs url:{}".format(url))
+            _tags = ["tags:"+i for i in _map[spectra]]
+            _qs = " AND ".join(_tags)
+            url = "{specurl}?q=({tags})".format(specurl=specs_url, tags=_qs)
             resp = get_request(url)
             # value needs to be a list, make it unique using set()
             _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
         _spec_whole = get_request(specs_url)
     except Exception as e:
         raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
-
     return _spec_map, _spec_whole
 
 
