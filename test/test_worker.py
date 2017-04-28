@@ -96,15 +96,15 @@ def test_rainbow(monkeypatch):
 
     msg = shared.good_input_data
     dates = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
-    tile_x = msg['tile_x']
-    tile_y = msg['tile_y']
+    chip_x = msg['chip_x']
+    chip_y = msg['chip_y']
     tiles_url = msg['inputs_url'].split('?')[0]
-    specs_url = tiles_url.replace('/tiles', '/tile-specs')
+    specs_url = tiles_url.replace('/chips', '/chip-specs')
 
     querystr_list = msg['inputs_url'].split('?')[1].split('&')
     requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
 
-    resp = worker.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
+    resp = worker.rainbow(chip_x, chip_y, dates, specs_url, tiles_url, requested_ubids)
     assert isinstance(resp, xr.Dataset)
     for bnd in ('blue', 'red', 'green', 'cfmask', 'nir', 'swir1', 'swir2', 'thermal'):
         assert len(resp[bnd]) == 1501
@@ -117,15 +117,15 @@ def test_detect(monkeypatch):
 
     msg = shared.good_input_data
     dates = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
-    tile_x = msg['tile_x']
-    tile_y = msg['tile_y']
+    chip_x = msg['chip_x']
+    chip_y = msg['chip_y']
     tiles_url = msg['inputs_url'].split('?')[0]
-    specs_url = tiles_url.replace('/tiles', '/tile-specs')
+    specs_url = tiles_url.replace('/chips', '/chip-specs')
 
     querystr_list = msg['inputs_url'].split('?')[1].split('&')
     requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
 
-    rainbow = worker.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
+    rainbow = worker.rainbow(chip_x, chip_y, dates, specs_url, tiles_url, requested_ubids)
     resp = worker.detect(rainbow, x=54, y=39)
 
     assert isinstance(resp, dict)
@@ -141,15 +141,15 @@ def test_simplify_detect_results(monkeypatch):
 
     msg = shared.good_input_data
     dates = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
-    tile_x = msg['tile_x']
-    tile_y = msg['tile_y']
+    chip_x = msg['chip_x']
+    chip_y = msg['chip_y']
     tiles_url = msg['inputs_url'].split('?')[0]
-    specs_url = tiles_url.replace('/tiles', '/tile-specs')
+    specs_url = tiles_url.replace('/chips', '/chip-specs')
 
     querystr_list = msg['inputs_url'].split('?')[1].split('&')
     requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
 
-    rainbow = worker.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
+    rainbow = worker.rainbow(chip_x, chip_y, dates, specs_url, tiles_url, requested_ubids)
     dtect = worker.detect(rainbow, x=54, y=39)
 
     resp = worker.simplify_detect_results(dtect)

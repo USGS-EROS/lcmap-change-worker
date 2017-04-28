@@ -46,8 +46,8 @@ def dtstr_to_ordinal(dtstr, iso=True):
     return _dt.toordinal()
 
 
-def as_numpy_array(tile, specs_map):
-    """ Return numpy array of tile data grouped by spectral map """
+def as_numpy_array(chip, specs_map):
+    """ Return numpy array of chip data grouped by spectral map """
     NUMPY_TYPES = {
         'UINT8': np.uint8,
         'UINT16': np.uint16,
@@ -55,17 +55,17 @@ def as_numpy_array(tile, specs_map):
         'INT16': np.int16
     }
     try:
-        spec    = specs_map[tile['ubid']]
+        spec    = specs_map[chip['ubid']]
         np_type = NUMPY_TYPES[spec['data_type']]
         shape   = specs_map[spec['ubid']]['data_shape']
-        buffer  = base64.b64decode(tile['data'])
+        buffer  = base64.b64decode(chip['data'])
     except KeyError as e:
         raise Exception("as_numpy_array inputs missing expected keys: {}".format(e))
 
     return np.frombuffer(buffer, np_type).reshape(*shape)
 
 
-def landsat_dataset(spectrum, ubid, specs, tiles):
+def landsat_dataset(spectrum, ubid, specs, chips):
     """ Return stack of landsat data for a given ubid, x, y, and time-span """
     # specs may not be unique, deal with it
     uniq_specs = []
@@ -74,16 +74,16 @@ def landsat_dataset(spectrum, ubid, specs, tiles):
             uniq_specs.append(spec)
 
     specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
-    rasters = xr.DataArray([as_numpy_array(tile, specs_map) for tile in tiles])
+    rasters = xr.DataArray([as_numpy_array(chip, specs_map) for chip in chips])
 
     ds = xr.Dataset()
     ds[spectrum] = (('t', 'x', 'y'), rasters)
     ds[spectrum].attrs = {'color': spectrum}
-    ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in tiles]))
+    ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in chips]))
     return ds
 
 
-def rainbow(x, y, t, specs_url, tiles_url, requested_ubids):
+def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
     """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
     spec_map, spec_whole = spectral_map(specs_url)
     ds = xr.Dataset()
@@ -91,10 +91,10 @@ def rainbow(x, y, t, specs_url, tiles_url, requested_ubids):
         for ubid in ubids:
             if ubid in requested_ubids:
                 params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
-                tiles_resp = get_request(tiles_url, params=params)
-                if not tiles_resp:
-                    raise Exception("No tiles returned for url: {} , params: {}".format(tiles_url, params))
-                band = landsat_dataset(spectrum, ubid, spec_whole, tiles_resp)
+                chips_resp = get_request(chips_url, params=params)
+                if not chips_resp:
+                    raise Exception("No chips returned for url: {} , params: {}".format(chips_url, params))
+                band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)
                 if band:
                     # combine_first instead of merge, for locations where data is missing for some bands
                     ds = ds.combine_first(band)
@@ -164,24 +164,24 @@ def simplify_detect_results(results):
 
 def run(msg, dimrng=100):
     """
-    Generator. Given parameters of 'inputs_url', 'tile_x', & 'tile_y',
+    Generator. Given parameters of 'inputs_url', 'chip_x', & 'chip_y',
     return results of ccd.detect along with other details necessary for
     returning change results
     """
     pw.logger.info("run() called with keys:{} values:{}".format(list(msg.keys()), list(msg.values())))
     try:
         dates     = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
-        tile_x    = msg['tile_x']
-        tile_y    = msg['tile_y']
-        tiles_url = msg['inputs_url'].split('?')[0]
-        specs_url = tiles_url.replace('/chips', '/chip-specs')
+        chip_x    = msg['chip_x']
+        chip_y    = msg['chip_y']
+        chips_url = msg['inputs_url'].split('?')[0]
+        specs_url = chips_url.replace('/chips', '/chip-specs')
 
         querystr_list = msg['inputs_url'].split('?')[1].split('&')
         requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
     except KeyError as e:
         raise Exception("input for worker.run missing expected key values: {}".format(e))
 
-    rbow = rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
+    rbow = rainbow(chip_x, chip_y, dates, specs_url, chips_url, requested_ubids)
 
     # hard coding dimensions for the moment,
     # it should come from a chip-spec query
@@ -190,8 +190,8 @@ def run(msg, dimrng=100):
     for x in range(0, dimrng):
         for y in range(0, dimrng):
             px, py = (30, -30)
-            xx = tile_x + (x * px)
-            yy = tile_y + (y * py)
+            xx = chip_x + (x * px)
+            yy = chip_y + (y * py)
 
             outgoing = dict()
             try:
