@@ -21,8 +21,26 @@ def fetch_json(jsonfile):
 def mock_get_spectral_request(url):
     # method for mocking spectral requests
     if '?q=' in url:
+        print("*** url: {}".format(url))
         spectrum = url.split(':')[-1].replace(')', '')
-        return fetch_json('data/tile-specs/spec_{}.json'.format(spectrum))
+        if 'red' in spectrum:
+            spec = 'red'
+        elif 'thermal' in spectrum:
+            spec = 'thermal'
+        elif 'blue' in spectrum:
+            spec = 'blue'
+        elif 'green' in spectrum:
+            spec = 'green'
+        elif 'pixelqa' in spectrum:
+            spec = 'cfmask'
+        elif 'nir' in spectrum:
+            spec = 'nir'
+        elif 'swir1' in spectrum:
+            spec = 'swir1'
+        elif 'swir2' in spectrum:
+            spec = 'swir2'
+
+        return fetch_json('data/tile-specs/spec_{}.json'.format(spec))
     else:
         return fetch_json('data/tile-specs/spec_all.json')
 
