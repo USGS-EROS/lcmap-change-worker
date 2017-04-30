@@ -23,11 +23,14 @@ def spectral_map(specs_url):
     _spec_map = dict()
     _map = {'blue': ('sr', 'blue'), 'green': ('sr', 'green'), 'red': ('sr', 'red'), 'nir': ('sr', 'nir'),
             'swir1': ('sr', 'swir1'), 'swir2': ('sr', 'swir2'), 'thermal': ('bt', 'thermal -BTB11'),
-            'cfmask': ('pixel', 'qa')}
+            'cfmask': 'pixelqa'}
 
     try:
         for spectra in _map:
-            _tags = ["tags:"+i for i in _map[spectra]]
+            if isinstance(_map[spectra], str):
+                _tags = ["tags:" + _map[spectra]]
+            else:
+                _tags = ["tags:"+i for i in _map[spectra]]
             _qs = " AND ".join(_tags)
             url = "{specurl}?q=({tags})".format(specurl=specs_url, tags=_qs)
             resp = get_request(url)
