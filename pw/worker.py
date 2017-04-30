@@ -115,15 +115,15 @@ def detect(rainbow, x, y):
         # according to lcmap-pyccd README, values expected in the following order:
         # ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
 
-        qabp = True if pw.QA_BIT_PACKED == 'True' else False
-
-        ccd_params = {'QA_BITPACKED': qabp,
-                      'QA_FILL': 255,
-                      'QA_CLEAR': 0,
-                      'QA_WATER': 1,
-                      'QA_SHADOW': 2,
-                      'QA_SNOW': 3,
-                      'QA_CLOUD': 4}
+        ccd_params = {}
+        if pw.QA_BIT_PACKED == 'False':
+            ccd_params = {'QA_BITPACKED': False,
+                          'QA_FILL': 255,
+                          'QA_CLEAR': 0,
+                          'QA_WATER': 1,
+                          'QA_SHADOW': 2,
+                          'QA_SNOW': 3,
+                          'QA_CLOUD': 4}
 
         return ccd.detect([dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array],
                           np.array(rainbow['blue'].values[:, row, col]),
