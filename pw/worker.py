@@ -22,8 +22,8 @@ def spectral_map(specs_url):
     """ Return a dict of sensor bands keyed to their respective spectrum """
     _spec_map = dict()
     _map = {'blue': ('sr', 'blue'), 'green': ('sr', 'green'), 'red': ('sr', 'red'), 'nir': ('sr', 'nir'),
-               'swir1': ('sr', 'swir1'), 'swir2': ('sr', 'swir2'), 'thermal': ('ta', 'thermal'),
-               'cfmask': ('pixel', 'qa')}
+            'swir1': ('sr', 'swir1'), 'swir2': ('sr', 'swir2'), 'thermal': ('bt', 'thermal -BTB11'),
+            'cfmask': ('pixel', 'qa')}
 
     try:
         for spectra in _map:
