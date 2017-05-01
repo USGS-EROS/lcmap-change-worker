@@ -116,7 +116,7 @@ def detect(rainbow, x, y):
         # ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
 
         ccd_params = {}
-        if pw.QA_BIT_PACKED == 'False':
+        if pw.QA_BIT_PACKED is not 'True':
             ccd_params = {'QA_BITPACKED': False,
                           'QA_FILL': 255,
                           'QA_CLEAR': 0,
