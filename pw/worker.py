@@ -101,7 +101,7 @@ def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
                 if band:
                     # combine_first instead of merge, for locations where data is missing for some bands
                     ds = ds.combine_first(band)
-    return ds
+    return ds.fillna(0)
 
 
 def detect(rainbow, x, y):
@@ -133,7 +133,7 @@ def detect(rainbow, x, y):
                           np.array(rainbow['swir1'].values[:, row, col]),
                           np.array(rainbow['swir2'].values[:, row, col]),
                           np.array(rainbow['thermal'].values[:, row, col]),
-                          np.array(rainbow['cfmask'].values[:, row, col]),
+                          np.array(rainbow['cfmask'].values[:, row, col], dtype=int),
                           params=ccd_params)
     except Exception as e:
         raise Exception(e)
