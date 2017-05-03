@@ -6,6 +6,6 @@ pw/__init__.py that are not present until after
 install. Do not import anything into this module."""
 
 """ __version__ MUST align with desired lcmap-pyccd version"""
-__version__ = '1.4.0'
+__version__ = '1.4.0rc1'
 __name = 'lcmap-pyccd-worker'
 __algorithm__ = '-'.join([__name, __version__])
