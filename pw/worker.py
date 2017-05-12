@@ -241,7 +241,7 @@ def callback(exchange, routing_key):
             channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         except Exception as e:
             pw.logger.error('Unrecoverable error ({}) handling message: {}'.format(e, body))
-            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=False)
+            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=True)
             sys.exit(1)
 
     return handler
