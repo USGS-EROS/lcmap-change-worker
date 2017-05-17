@@ -95,12 +95,11 @@ def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
             if ubid in requested_ubids:
                 params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
                 chips_resp = get_request(chips_url, params=params)
-                if not chips_resp:
-                    raise Exception("No chips returned for url: {} , params: {}".format(chips_url, params))
-                band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)
-                if band:
-                    # combine_first instead of merge, for locations where data is missing for some bands
-                    ds = ds.combine_first(band)
+                if chips_resp:
+                    band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)
+                    if band:
+                        # combine_first instead of merge, for locations where data is missing for some bands
+                        ds = ds.combine_first(band)
     return ds.fillna(0)
 
 
