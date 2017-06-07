@@ -86,7 +86,7 @@ export PYSPARK_DRIVER_PYTHON=python3
 export PYSPARK_PYTHON=python3
 export LPW_MESOS_MASTER=mesos://< the ip address of the mesos-master started by lcmap-services >:5050                                                                                                                                                          
 export LPW_EXECUTOR_IMAGE=usgseros/lcmap-pyccd-worker:spark
-export LPW_EXECUTOR_CORES=4
+export LPW_EXECUTOR_CORES=3
 export LPW_EXECUTOR_FORCE_PULL_IMAGE=true
 export LPW_SPARK_PARALLELIZATION=2
 ```
