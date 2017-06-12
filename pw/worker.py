@@ -21,21 +21,24 @@ def get_request(url, params=None):
 def spectral_map(specs_url):
     """ Return a dict of sensor bands keyed to their respective spectrum """
     _spec_map = dict()
-    _map = {'thermal': 'toa -11', 'cfmask': '+cfmask -conf'}
-    for bnd in ('blue', 'green', 'red', 'nir', 'swir1', 'swir2'):
-        _map[bnd] = 'sr'
+    _map = {'blue': ('sr', 'blue'), 'green': ('sr', 'green'), 'red': ('sr', 'red'), 'nir': ('sr', 'nir'),
+            'swir1': ('sr', 'swir1'), 'swir2': ('sr', 'swir2'), 'thermal': ('bt', 'thermal -BTB11'),
+            'cfmask': 'pixelqa'}
 
     try:
         for spectra in _map:
-            url = "{specurl}?q=((tags:{band}) AND tags:{spec})".format(specurl=specs_url, spec=spectra, band=_map[spectra])
-            pw.logger.debug("tile-specs url:{}".format(url))
+            if isinstance(_map[spectra], str):
+                _tags = ["tags:" + _map[spectra]]
+            else:
+                _tags = ["tags:"+i for i in _map[spectra]]
+            _qs = " AND ".join(_tags)
+            url = "{specurl}?q=({tags})".format(specurl=specs_url, tags=_qs)
             resp = get_request(url)
             # value needs to be a list, make it unique using set()
             _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
         _spec_whole = get_request(specs_url)
     except Exception as e:
         raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
-
     return _spec_map, _spec_whole
 
 
@@ -46,8 +49,8 @@ def dtstr_to_ordinal(dtstr, iso=True):
     return _dt.toordinal()
 
 
-def as_numpy_array(tile, specs_map):
-    """ Return numpy array of tile data grouped by spectral map """
+def as_numpy_array(chip, specs_map):
+    """ Return numpy array of chip data grouped by spectral map """
     NUMPY_TYPES = {
         'UINT8': np.uint8,
         'UINT16': np.uint16,
@@ -55,17 +58,17 @@ def as_numpy_array(tile, specs_map):
         'INT16': np.int16
     }
     try:
-        spec    = specs_map[tile['ubid']]
+        spec    = specs_map[chip['ubid']]
         np_type = NUMPY_TYPES[spec['data_type']]
         shape   = specs_map[spec['ubid']]['data_shape']
-        buffer  = base64.b64decode(tile['data'])
+        buffer  = base64.b64decode(chip['data'])
     except KeyError as e:
         raise Exception("as_numpy_array inputs missing expected keys: {}".format(e))
 
     return np.frombuffer(buffer, np_type).reshape(*shape)
 
 
-def landsat_dataset(spectrum, ubid, specs, tiles):
+def landsat_dataset(spectrum, ubid, specs, chips):
     """ Return stack of landsat data for a given ubid, x, y, and time-span """
     # specs may not be unique, deal with it
     uniq_specs = []
@@ -74,16 +77,16 @@ def landsat_dataset(spectrum, ubid, specs, tiles):
             uniq_specs.append(spec)
 
     specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
-    rasters = xr.DataArray([as_numpy_array(tile, specs_map) for tile in tiles])
+    rasters = xr.DataArray([as_numpy_array(chip, specs_map) for chip in chips])
 
     ds = xr.Dataset()
     ds[spectrum] = (('t', 'x', 'y'), rasters)
     ds[spectrum].attrs = {'color': spectrum}
-    ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in tiles]))
+    ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in chips]))
     return ds
 
 
-def rainbow(x, y, t, specs_url, tiles_url, requested_ubids):
+def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
     """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
     spec_map, spec_whole = spectral_map(specs_url)
     ds = xr.Dataset()
@@ -91,14 +94,13 @@ def rainbow(x, y, t, specs_url, tiles_url, requested_ubids):
         for ubid in ubids:
             if ubid in requested_ubids:
                 params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
-                tiles_resp = get_request(tiles_url, params=params)
-                if not tiles_resp:
-                    raise Exception("No tiles returned for url: {} , params: {}".format(tiles_url, params))
-                band = landsat_dataset(spectrum, ubid, spec_whole, tiles_resp)
-                if band:
-                    # combine_first instead of merge, for locations where data is missing for some bands
-                    ds = ds.combine_first(band)
-    return ds
+                chips_resp = get_request(chips_url, params=params)
+                if chips_resp:
+                    band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)
+                    if band:
+                        # combine_first instead of merge, for locations where data is missing for some bands
+                        ds = ds.combine_first(band)
+    return ds.fillna(0)
 
 
 def detect(rainbow, x, y):
@@ -111,6 +113,17 @@ def detect(rainbow, x, y):
         rainbow_date_array = np.array(rainbow['t'].values)
         # according to lcmap-pyccd README, values expected in the following order:
         # ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
+
+        ccd_params = {}
+        if pw.QA_BIT_PACKED is not 'True':
+            ccd_params = {'QA_BITPACKED': False,
+                          'QA_FILL': 255,
+                          'QA_CLEAR': 0,
+                          'QA_WATER': 1,
+                          'QA_SHADOW': 2,
+                          'QA_SNOW': 3,
+                          'QA_CLOUD': 4}
+
         return ccd.detect([dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array],
                           np.array(rainbow['blue'].values[:, row, col]),
                           np.array(rainbow['green'].values[:, row, col]),
@@ -119,7 +132,8 @@ def detect(rainbow, x, y):
                           np.array(rainbow['swir1'].values[:, row, col]),
                           np.array(rainbow['swir2'].values[:, row, col]),
                           np.array(rainbow['thermal'].values[:, row, col]),
-                          np.array(rainbow['cfmask'].values[:, row, col]))
+                          np.array(rainbow['cfmask'].values[:, row, col], dtype=int),
+                          params=ccd_params)
     except Exception as e:
         raise Exception(e)
 
@@ -152,34 +166,34 @@ def simplify_detect_results(results):
 
 def run(msg, dimrng=100):
     """
-    Generator. Given parameters of 'inputs_url', 'tile_x', & 'tile_y',
+    Generator. Given parameters of 'inputs_url', 'chip_x', & 'chip_y',
     return results of ccd.detect along with other details necessary for
     returning change results
     """
     pw.logger.info("run() called with keys:{} values:{}".format(list(msg.keys()), list(msg.values())))
     try:
         dates     = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
-        tile_x    = msg['tile_x']
-        tile_y    = msg['tile_y']
-        tiles_url = msg['inputs_url'].split('?')[0]
-        specs_url = tiles_url.replace('/tiles', '/tile-specs')
+        chip_x    = msg['chip_x']
+        chip_y    = msg['chip_y']
+        chips_url = msg['inputs_url'].split('?')[0]
+        specs_url = chips_url.replace('/chips', '/chip-specs')
 
         querystr_list = msg['inputs_url'].split('?')[1].split('&')
         requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
     except KeyError as e:
         raise Exception("input for worker.run missing expected key values: {}".format(e))
 
-    rbow = rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
+    rbow = rainbow(chip_x, chip_y, dates, specs_url, chips_url, requested_ubids)
 
     # hard coding dimensions for the moment,
-    # it should come from a tile-spec query
+    # it should come from a chip-spec query
     # {'data_shape': [100, 100], 'pixel_x': 30, 'pixel_y': -30}
-    # tile-spec query results should then be provided to detect()
+    # chip-spec query results should then be provided to detect()
     for x in range(0, dimrng):
         for y in range(0, dimrng):
             px, py = (30, -30)
-            xx = tile_x + (x * px)
-            yy = tile_y + (y * py)
+            xx = chip_x + (x * px)
+            yy = chip_y + (y * py)
 
             outgoing = dict()
             try:
@@ -226,7 +240,7 @@ def callback(exchange, routing_key):
             channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         except Exception as e:
             pw.logger.error('Unrecoverable error ({}) handling message: {}'.format(e, body))
-            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=False)
+            channel.basic_nack(delivery_tag=method_frame.delivery_tag, requeue=True)
             sys.exit(1)
 
     return handler

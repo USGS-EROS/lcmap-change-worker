@@ -8,8 +8,8 @@ from . import shared
 # some constants
 band = 'blue'
 ubid = 'LANDSAT_7/ETM/sr_band1'
-tile_specs_url = 'http://localhost/landsat/tile-specs'
-tiles_json = 'data/tiles/band-json/{}_-1821585_2891595_{}.json'.format(band, ubid.replace('/', '-'))
+specs_url = 'http://localhost/landsat/tile-specs'
+chips_json = 'data/tiles/band-json/{}_-1821585_2891595_{}.json'.format(band, ubid.replace('/', '-'))
 
 
 def fetch_json(jsonfile):
@@ -21,8 +21,26 @@ def fetch_json(jsonfile):
 def mock_get_spectral_request(url):
     # method for mocking spectral requests
     if '?q=' in url:
+        print("*** url: {}".format(url))
         spectrum = url.split(':')[-1].replace(')', '')
-        return fetch_json('data/tile-specs/spec_{}.json'.format(spectrum))
+        if 'red' in spectrum:
+            spec = 'red'
+        elif 'thermal' in spectrum:
+            spec = 'thermal'
+        elif 'blue' in spectrum:
+            spec = 'blue'
+        elif 'green' in spectrum:
+            spec = 'green'
+        elif 'pixelqa' in spectrum:
+            spec = 'cfmask'
+        elif 'nir' in spectrum:
+            spec = 'nir'
+        elif 'swir1' in spectrum:
+            spec = 'swir1'
+        elif 'swir2' in spectrum:
+            spec = 'swir2'
+
+        return fetch_json('data/tile-specs/spec_{}.json'.format(spec))
     else:
         return fetch_json('data/tile-specs/spec_all.json')
 
@@ -48,7 +66,7 @@ def mock_spectral_map(url):
 def test_spectral_map(monkeypatch):
     # test creating spectral map
     monkeypatch.setattr('pw.worker.get_request', mock_get_spectral_request)
-    spec_map, spec_whole = worker.spectral_map(tile_specs_url)
+    spec_map, spec_whole = worker.spectral_map(specs_url)
     assert set(spec_map.keys()) == shared.spect_map_keys
     assert len(spec_whole) == 75
     for i in spec_whole:
@@ -63,8 +81,8 @@ def test_dtstr_to_ordinal():
 def test_as_numpy_array(monkeypatch):
     # test converting landsat dataset into numpy array
     monkeypatch.setattr('pw.worker.get_request', mock_get_spectral_request)
-    _map, spec_whole = worker.spectral_map(tile_specs_url)
-    tiles = fetch_json(tiles_json)
+    _map, spec_whole = worker.spectral_map(specs_url)
+    tiles = fetch_json(chips_json)
 
     uniq_specs = []
     for spec in spec_whole:
@@ -81,8 +99,8 @@ def test_as_numpy_array(monkeypatch):
 def test_landsat_dataset(monkeypatch):
     # test assembling landsat data
     monkeypatch.setattr('pw.worker.get_request', mock_get_spectral_request)
-    _map, spec_whole = worker.spectral_map(tile_specs_url)
-    tiles = fetch_json(tiles_json)
+    _map, spec_whole = worker.spectral_map(specs_url)
+    tiles = fetch_json(chips_json)
 
     resp = worker.landsat_dataset(band, ubid, spec_whole, tiles)
     assert isinstance(resp, xr.Dataset)
@@ -96,15 +114,15 @@ def test_rainbow(monkeypatch):
 
     msg = shared.good_input_data
     dates = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
-    tile_x = msg['tile_x']
-    tile_y = msg['tile_y']
+    chip_x = msg['chip_x']
+    chip_y = msg['chip_y']
     tiles_url = msg['inputs_url'].split('?')[0]
-    specs_url = tiles_url.replace('/tiles', '/tile-specs')
+    specs_url = tiles_url.replace('/chips', '/chip-specs')
 
     querystr_list = msg['inputs_url'].split('?')[1].split('&')
     requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
 
-    resp = worker.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
+    resp = worker.rainbow(chip_x, chip_y, dates, specs_url, tiles_url, requested_ubids)
     assert isinstance(resp, xr.Dataset)
     for bnd in ('blue', 'red', 'green', 'cfmask', 'nir', 'swir1', 'swir2', 'thermal'):
         assert len(resp[bnd]) == 1501
@@ -117,15 +135,15 @@ def test_detect(monkeypatch):
 
     msg = shared.good_input_data
     dates = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
-    tile_x = msg['tile_x']
-    tile_y = msg['tile_y']
+    chip_x = msg['chip_x']
+    chip_y = msg['chip_y']
     tiles_url = msg['inputs_url'].split('?')[0]
-    specs_url = tiles_url.replace('/tiles', '/tile-specs')
+    specs_url = tiles_url.replace('/chips', '/chip-specs')
 
     querystr_list = msg['inputs_url'].split('?')[1].split('&')
     requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
 
-    rainbow = worker.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
+    rainbow = worker.rainbow(chip_x, chip_y, dates, specs_url, tiles_url, requested_ubids)
     resp = worker.detect(rainbow, x=54, y=39)
 
     assert isinstance(resp, dict)
@@ -141,15 +159,15 @@ def test_simplify_detect_results(monkeypatch):
 
     msg = shared.good_input_data
     dates = [i.split('=')[1] for i in msg['inputs_url'].split('&') if 'acquired=' in i][0]
-    tile_x = msg['tile_x']
-    tile_y = msg['tile_y']
+    chip_x = msg['chip_x']
+    chip_y = msg['chip_y']
     tiles_url = msg['inputs_url'].split('?')[0]
-    specs_url = tiles_url.replace('/tiles', '/tile-specs')
+    specs_url = tiles_url.replace('/chips', '/chip-specs')
 
     querystr_list = msg['inputs_url'].split('?')[1].split('&')
     requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
 
-    rainbow = worker.rainbow(tile_x, tile_y, dates, specs_url, tiles_url, requested_ubids)
+    rainbow = worker.rainbow(chip_x, chip_y, dates, specs_url, tiles_url, requested_ubids)
     dtect = worker.detect(rainbow, x=54, y=39)
 
     resp = worker.simplify_detect_results(dtect)

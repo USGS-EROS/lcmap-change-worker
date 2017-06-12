@@ -12,6 +12,7 @@ env:
   - LPW_RABBIT_HOST: localhost
   - LPW_RABBIT_EXCHANGE: travis.lcmap.pyccd.worker
   - LPW_RABBIT_QUEUE: travis.lcmap.pyccd.worker
+  - LPW_QA_BIT_PACKED: False
 before_install:
 - make docker-deps-up
 script: pytest
