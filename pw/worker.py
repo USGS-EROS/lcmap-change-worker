@@ -184,6 +184,7 @@ def run(msg, dimrng=100):
         raise Exception("input for worker.run missing expected key values: {}".format(e))
 
     rbow = rainbow(chip_x, chip_y, dates, specs_url, chips_url, requested_ubids)
+    alg  = ccd.version.__algorithm__
 
     # hard coding dimensions for the moment,
     # it should come from a chip-spec query
@@ -201,12 +202,15 @@ def run(msg, dimrng=100):
                 results = detect(rbow, x, y)
                 outgoing['result'] = json.dumps(simplify_detect_results(results))
                 outgoing['result_ok'] = True
-                outgoing['algorithm'] = results['algorithm']
             except Exception as e:
-                pw.logger.error("Exception running ccd.detect: {}".format(e))
-                outgoing['result'] = ''
+                # using e.args since detect() is a wrapper for ccd.detect(), leaving the returned exception unclear
+                detect_exception_msg = "Exception running ccd.detect. x: {}, y: {}, algorithm: {}, " \
+                                       "message: {}, exception args: {}".format(xx, yy, alg, e, e.args)
+                pw.logger.error(detect_exception_msg)
+                outgoing['result'] = detect_exception_msg
                 outgoing['result_ok'] = False
 
+            outgoing['algorithm'] = alg
             outgoing['x'], outgoing['y'] = xx, yy
             outgoing['result_md5'] = hashlib.md5(outgoing['result'].encode('UTF-8')).hexdigest()
             outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
