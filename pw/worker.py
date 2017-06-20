@@ -33,10 +33,16 @@ def spectral_map(specs_url):
                 _tags = ["tags:"+i for i in _map[spectra]]
             _qs = " AND ".join(_tags)
             url = "{specurl}?q=({tags})".format(specurl=specs_url, tags=_qs)
+            _start = datetime.now()
             resp = get_request(url)
+            dur = datetime.now() - _start
+            pw.logger.debug("request for {} took {} seconds to fulfill".format(url, dur.total_seconds()))
             # value needs to be a list, make it unique using set()
             _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
+        _start_whole = datetime.now()
         _spec_whole = get_request(specs_url)
+        _dur_whole = datetime.now() - _start_whole
+        pw.logger.debug("request for whole spec response to {}, took {} seconds".format(specs_url, _dur_whole.total_seconds()))
     except Exception as e:
         raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
     return _spec_map, _spec_whole
@@ -94,7 +100,11 @@ def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
         for ubid in ubids:
             if ubid in requested_ubids:
                 params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
+                _chip_start = datetime.now()
                 chips_resp = get_request(chips_url, params=params)
+                _chip_dur = datetime.now() - _chip_start
+                pw.logger.debug("chip request for ubid, x, y, acquired: {}, {}, {}, {} "
+                                "took: {} seconds".format(ubid, x, y, t, _chip_dur.total_seconds()))
                 if chips_resp:
                     band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)
                     if band:
@@ -199,7 +209,10 @@ def run(msg, dimrng=100):
             outgoing = dict()
             try:
                 # results.keys(): algorithm, change_models, procedure, processing_mask,
+                _detect_start = datetime.now()
                 results = detect(rbow, x, y)
+                _detect_dur = datetime.now() - _detect_start
+                pw.logger.debug("detect results for x, y: {}, {} took {} seconds to generate".format(xx, yy, _detect_dur.total_seconds()))
                 outgoing['result'] = json.dumps(simplify_detect_results(results))
                 outgoing['result_ok'] = True
             except Exception as e:
@@ -238,9 +251,12 @@ def callback(exchange, routing_key):
             unpacked_body = decode_body(msgpack.unpackb(body))
             results = run(unpacked_body)
             for result in results:
-                pw.logger.debug("saving result: {} {}".format(result['x'], result['y']))
+                _save_start = datetime.now()
+                pw.logger.debug("saving result: {} {} at {}".format(result['x'], result['y'], _save_start.strftime("%H:%M:%S")))
                 packed_result = msgpack.packb(result)
                 messaging.send(packed_result, channel, exchange, routing_key)
+                _dur = datetime.now() - _save_start
+                pw.logger.debug("took {} seconds to deliver result message for x/y: {}/{}".format(_dur.total_seconds(), result['x'], result['y']))
             channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         except Exception as e:
             pw.logger.error('Unrecoverable error ({}) handling message: {}'.format(e, body))
