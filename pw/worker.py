@@ -104,7 +104,7 @@ def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
                 chips_resp = get_request(chips_url, params=params)
                 _chip_dur = datetime.now() - _chip_start
                 pw.logger.debug("chip request for ubid, x, y, acquired: {}, {}, {}, {} "
-                                "\ntook: {} seconds\nnumber of chips: {}".format(ubid, x, y, t, _chip_dur.total_seconds(), len(chips_resp)))
+                                "took: {} seconds, number of chips: {}".format(ubid, x, y, t, _chip_dur.total_seconds(), len(chips_resp)))
                 if chips_resp:
                     band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)
                     if band:
