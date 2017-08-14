@@ -87,6 +87,7 @@ setup(
                       'numpy==1.12.0',
                       'msgpack-python==0.4.8',
                       'pyramid==1.8.2',
+                      'lcmap-merlin==0.6',
     ],
 
     # List additional groups of dependencies here (e.g. development
