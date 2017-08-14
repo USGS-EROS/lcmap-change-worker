@@ -1,51 +1,19 @@
 #!/usr/bin/env python
-import base64
 import ccd
 import hashlib
 import msgpack
 import numpy as np
-import requests
 import json
-import xarray as xr
-import pandas as pd
 import sys
 from . import messaging
 from datetime import datetime
 import pw
 
+from merlin.support import aardvark, chip_spec_queries, data_config
+from merlin.timeseries import pyccd as pyccd_rods
 
-def get_request(url, params=None):
-    return requests.get(url, params=params).json()
-
-
-def spectral_map(specs_url):
-    """ Return a dict of sensor bands keyed to their respective spectrum """
-    _spec_map = dict()
-    _map = {'blue': ('sr', 'blue'), 'green': ('sr', 'green'), 'red': ('sr', 'red'), 'nir': ('sr', 'nir'),
-            'swir1': ('sr', 'swir1'), 'swir2': ('sr', 'swir2'), 'thermal': ('bt', 'thermal -BTB11'),
-            'cfmask': 'pixelqa'}
-
-    try:
-        for spectra in _map:
-            if isinstance(_map[spectra], str):
-                _tags = ["tags:" + _map[spectra]]
-            else:
-                _tags = ["tags:"+i for i in _map[spectra]]
-            _qs = " AND ".join(_tags)
-            url = "{specurl}?q=({tags})".format(specurl=specs_url, tags=_qs)
-            _start = datetime.now()
-            resp = get_request(url)
-            dur = datetime.now() - _start
-            pw.logger.debug("request for {} took {} seconds to fulfill".format(url, dur.total_seconds()))
-            # value needs to be a list, make it unique using set()
-            _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
-        _start_whole = datetime.now()
-        _spec_whole = get_request(specs_url)
-        _dur_whole = datetime.now() - _start_whole
-        pw.logger.debug("request for whole spec response to {}, took {} seconds".format(specs_url, _dur_whole.total_seconds()))
-    except Exception as e:
-        raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
-    return _spec_map, _spec_whole
+from merlin.chips import get as chips_fn
+from merlin.chip_specs import get as specs_fn
 
 
 def dtstr_to_ordinal(dtstr, iso=True):
@@ -55,74 +23,12 @@ def dtstr_to_ordinal(dtstr, iso=True):
     return _dt.toordinal()
 
 
-def as_numpy_array(chip, specs_map):
-    """ Return numpy array of chip data grouped by spectral map """
-    NUMPY_TYPES = {
-        'UINT8': np.uint8,
-        'UINT16': np.uint16,
-        'INT8': np.int8,
-        'INT16': np.int16
-    }
-    try:
-        spec    = specs_map[chip['ubid']]
-        np_type = NUMPY_TYPES[spec['data_type']]
-        shape   = specs_map[spec['ubid']]['data_shape']
-        buffer  = base64.b64decode(chip['data'])
-    except KeyError as e:
-        raise Exception("as_numpy_array inputs missing expected keys: {}".format(e))
-
-    return np.frombuffer(buffer, np_type).reshape(*shape)
-
-
-def landsat_dataset(spectrum, ubid, specs, chips):
-    """ Return stack of landsat data for a given ubid, x, y, and time-span """
-    # specs may not be unique, deal with it
-    uniq_specs = []
-    for spec in specs:
-        if spec not in uniq_specs:
-            uniq_specs.append(spec)
-
-    specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
-    rasters = xr.DataArray([as_numpy_array(chip, specs_map) for chip in chips])
-
-    ds = xr.Dataset()
-    ds[spectrum] = (('t', 'x', 'y'), rasters)
-    ds[spectrum].attrs = {'color': spectrum}
-    ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in chips]))
-    return ds
-
-
-def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
-    """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
-    spec_map, spec_whole = spectral_map(specs_url)
-    ds = xr.Dataset()
-    for (spectrum, ubids) in spec_map.items():
-        for ubid in ubids:
-            if ubid in requested_ubids:
-                params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
-                _chip_start = datetime.now()
-                chips_resp = get_request(chips_url, params=params)
-                _chip_dur = datetime.now() - _chip_start
-                pw.logger.debug("chip request for ubid, x, y, acquired: {}, {}, {}, {} "
-                                "took: {} seconds, number of chips: {}".format(ubid, x, y, t, _chip_dur.total_seconds(), len(chips_resp)))
-                if chips_resp:
-                    band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)
-                    if band:
-                        # combine_first instead of merge, for locations where data is missing for some bands
-                        ds = ds.combine_first(band)
-                else:
-                     pw.logger.warn("No chips returned for ubid, x, y, acquired: {}, {}, {}, {}".format(ubid, x, y, t))
-    return ds.fillna(0)
-
-
-def detect(rainbow, x, y):
+def detect(rods):
     """ Return results of ccd.detect for a given stack of data at a particular x and y """
     try:
         # Beware: rainbow contains stacks of row-major two-dimensional arrays
         # for each band of data. These variables are used to make the order
         # of access clear.
-        row, col = y, x
-        rainbow_date_array = np.array(rainbow['t'].values)
         # according to lcmap-pyccd README, values expected in the following order:
         # ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
 
@@ -136,15 +42,15 @@ def detect(rainbow, x, y):
                           'QA_SNOW': 3,
                           'QA_CLOUD': 4}
 
-        return ccd.detect([dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array],
-                          np.array(rainbow['blue'].values[:, row, col]),
-                          np.array(rainbow['green'].values[:, row, col]),
-                          np.array(rainbow['red'].values[:, row, col]),
-                          np.array(rainbow['nir'].values[:, row, col]),
-                          np.array(rainbow['swir1'].values[:, row, col]),
-                          np.array(rainbow['swir2'].values[:, row, col]),
-                          np.array(rainbow['thermal'].values[:, row, col]),
-                          np.array(rainbow['cfmask'].values[:, row, col], dtype=int),
+        return ccd.detect(rods['dates'],
+                          rods['blue'],
+                          rods['green'],
+                          rods['red'],
+                          rods['nir'],
+                          rods['swir1'],
+                          rods['swir2'],
+                          rods['thermal'],
+                          rods['cfmask'],
                           params=ccd_params)
     except Exception as e:
         raise Exception(e)
@@ -189,13 +95,11 @@ def run(msg, dimrng=100):
         chip_y    = msg['chip_y']
         chips_url = msg['inputs_url'].split('?')[0]
         specs_url = chips_url.replace('/chips', '/chip-specs')
-
-        querystr_list = msg['inputs_url'].split('?')[1].split('&')
-        requested_ubids = [i.replace('ubid=', '') for i in querystr_list if 'ubid=' in i]
     except KeyError as e:
         raise Exception("input for worker.run missing expected key values: {}".format(e))
 
-    rbow = rainbow(chip_x, chip_y, dates, specs_url, chips_url, requested_ubids)
+    queries = chip_spec_queries(specs_url)
+    rods = pyccd_rods((chip_x, chip_y), specs_url, specs_fn, chips_url, chips_fn, dates, queries)
     alg  = ccd.version.__algorithm__
 
     # hard coding dimensions for the moment,
