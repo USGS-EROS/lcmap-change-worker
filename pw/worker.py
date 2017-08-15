@@ -9,7 +9,7 @@ from . import messaging
 from datetime import datetime
 import pw
 
-from merlin.support import aardvark, chip_spec_queries, data_config
+from merlin.support import chip_spec_queries
 from merlin.timeseries import pyccd as pyccd_rods
 
 from merlin.chips import get as chips_fn
@@ -21,39 +21,6 @@ def dtstr_to_ordinal(dtstr, iso=True):
     _fmt = '%Y-%m-%dT%H:%M:%SZ' if iso else '%Y-%m-%d %H:%M:%S'
     _dt = datetime.strptime(dtstr, _fmt)
     return _dt.toordinal()
-
-
-def detect(rods):
-    """ Return results of ccd.detect for a given stack of data at a particular x and y """
-    try:
-        # Beware: rainbow contains stacks of row-major two-dimensional arrays
-        # for each band of data. These variables are used to make the order
-        # of access clear.
-        # according to lcmap-pyccd README, values expected in the following order:
-        # ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
-
-        ccd_params = {}
-        if pw.QA_BIT_PACKED is not 'True':
-            ccd_params = {'QA_BITPACKED': False,
-                          'QA_FILL': 255,
-                          'QA_CLEAR': 0,
-                          'QA_WATER': 1,
-                          'QA_SHADOW': 2,
-                          'QA_SNOW': 3,
-                          'QA_CLOUD': 4}
-
-        return ccd.detect(rods['dates'],
-                          rods['blue'],
-                          rods['green'],
-                          rods['red'],
-                          rods['nir'],
-                          rods['swir1'],
-                          rods['swir2'],
-                          rods['thermal'],
-                          rods['cfmask'],
-                          params=ccd_params)
-    except Exception as e:
-        raise Exception(e)
 
 
 def simplify_objects(obj):
@@ -82,7 +49,7 @@ def simplify_detect_results(results):
     return output
 
 
-def run(msg, dimrng=100):
+def run(msg):
     """
     Generator. Given parameters of 'inputs_url', 'chip_x', & 'chip_y',
     return results of ccd.detect along with other details necessary for
@@ -102,39 +69,51 @@ def run(msg, dimrng=100):
     rods = pyccd_rods((chip_x, chip_y), specs_url, specs_fn, chips_url, chips_fn, dates, queries)
     alg  = ccd.version.__algorithm__
 
-    # hard coding dimensions for the moment,
-    # it should come from a chip-spec query
-    # {'data_shape': [100, 100], 'pixel_x': 30, 'pixel_y': -30}
-    # chip-spec query results should then be provided to detect()
-    for x in range(0, dimrng):
-        for y in range(0, dimrng):
-            px, py = (30, -30)
-            xx = chip_x + (x * px)
-            yy = chip_y + (y * py)
+    json_dumps      = json.dumps
+    pw_logger_debug = pw.logger.debug
+    pw_logger_error = pw.logger.error
+    datetime_now    = datetime.now
+    ccd_detect      = ccd.detect
+    #pw_qa_bitpacked = pw.QA_BIT_PACKED
+    hashlib_md5     = hashlib.md5
 
-            outgoing = dict()
-            try:
-                # results.keys(): algorithm, change_models, procedure, processing_mask,
-                _detect_start = datetime.now()
-                results = detect(rbow, x, y)
-                _detect_dur = datetime.now() - _detect_start
-                pw.logger.debug("detect results for x, y: {}, {} took {} seconds to generate".format(xx, yy, _detect_dur.total_seconds()))
-                outgoing['result'] = json.dumps(simplify_detect_results(results))
-                outgoing['result_ok'] = True
-            except Exception as e:
-                # using e.args since detect() is a wrapper for ccd.detect(), leaving the returned exception unclear
-                detect_exception_msg = "Exception running ccd.detect. x: {}, y: {}, algorithm: {}, " \
-                                       "message: {}, exception args: {}".format(xx, yy, alg, e, e.args)
-                pw.logger.error(detect_exception_msg)
-                outgoing['result'] = detect_exception_msg
-                outgoing['result_ok'] = False
+    for rod in rods:
+        outgoing = dict()
+        # rod[0] = ((chip_x, chip_y), pixel_x, pixel_y)
+        px = rod[0][1]
+        py = rod[0][2]
+        try:
+            _detect_start = datetime_now()
+            # lcmap-merlin intersects the rod contents so that they are all even size, report
+            pw_logger_debug("rod length for x/y {}/{} {}".format(px, py, len(rod[1]['blues'])))
+            results = ccd_detect(rod[1]['dates'],
+                                 rod[1]['blues'],
+                                 rod[1]['greens'],
+                                 rod[1]['reds'],
+                                 rod[1]['nirs'],
+                                 rod[1]['swir1s'],
+                                 rod[1]['swir2s'],
+                                 rod[1]['thermals'],
+                                 rod[1]['quality'],
+                                 params={})
+            _detect_dur = datetime_now() - _detect_start
+            pw_logger_debug("detect results for x, y: {}, {} took {} seconds to generate".format(px, py, _detect_dur.total_seconds()))
+            outgoing['result'] = json_dumps(simplify_detect_results(results))
+            outgoing['result_ok'] = True
+        except Exception as e:
+            # using e.args since detect() is a wrapper for ccd.detect(), leaving the returned exception unclear
+            detect_exception_msg = "Exception running ccd.detect. x: {}, y: {}, algorithm: {}, " \
+                                   "message: {}, exception args: {}".format(px, py, alg, e, e.args)
+            pw_logger_error(detect_exception_msg)
+            outgoing['result'] = detect_exception_msg
+            outgoing['result_ok'] = False
 
-            outgoing['algorithm'] = alg
-            outgoing['x'], outgoing['y'] = xx, yy
-            outgoing['result_md5'] = hashlib.md5(outgoing['result'].encode('UTF-8')).hexdigest()
-            outgoing['result_produced'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-            outgoing['inputs_md5'] = 'not implemented'
-            yield outgoing
+        outgoing['algorithm'] = alg
+        outgoing['x'], outgoing['y'] = px, py
+        outgoing['result_md5'] = hashlib_md5(outgoing['result'].encode('UTF-8')).hexdigest()
+        outgoing['result_produced'] = datetime_now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        outgoing['inputs_md5'] = 'not implemented'
+        yield outgoing
 
 
 def decode_body(body):
@@ -154,15 +133,20 @@ def callback(exchange, routing_key):
     def handler(channel, method_frame, properties, body):
         try:
             pw.logger.info("Received message with packed body: {}".format(body))
-            unpacked_body = decode_body(msgpack.unpackb(body))
-            results = run(unpacked_body)
+            unpacked_body  = decode_body(msgpack.unpackb(body))
+            results        = run(unpacked_body)
+            datetime_now   = datetime.now
+            msgpack_packb  = msgpack.packb
+            messaging_send = messaging.send
+            pw_logger_debug = pw.logger.debug
+
             for result in results:
-                _save_start = datetime.now()
-                pw.logger.debug("saving result: {} {} at {}".format(result['x'], result['y'], _save_start.strftime("%H:%M:%S")))
-                packed_result = msgpack.packb(result)
-                messaging.send(packed_result, channel, exchange, routing_key)
-                _dur = datetime.now() - _save_start
-                pw.logger.debug("took {} seconds to deliver result message for x/y: {}/{}".format(_dur.total_seconds(), result['x'], result['y']))
+                _save_start = datetime_now()
+                pw_logger_debug("saving result: {} {} at {}".format(result['x'], result['y'], _save_start.strftime("%H:%M:%S")))
+                packed_result = msgpack_packb(result)
+                messaging_send(packed_result, channel, exchange, routing_key)
+                _dur = datetime_now() - _save_start
+                pw_logger_debug("took {} seconds to deliver result message for x/y: {}/{}".format(_dur.total_seconds(), result['x'], result['y']))
             channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         except Exception as e:
             pw.logger.error('Unrecoverable error ({}) handling message: {}'.format(e, body))
