@@ -81,12 +81,13 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['pika>=0.10.0',
                       'requests>=2.12.4',
-                      'lcmap-pyccd=={}'.format(__version__),
+                      'lcmap-pyccd=={}'.format(__pyccd_version__),
                       'xarray==0.9.1',
                       'pandas==0.19.2',
                       'numpy==1.12.0',
                       'msgpack-python==0.4.8',
                       'pyramid==1.8.2',
+                      'lcmap-merlin==0.6',
     ],
 
     # List additional groups of dependencies here (e.g. development
