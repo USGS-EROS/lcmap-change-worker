@@ -151,9 +151,7 @@ def detect(rainbow, x, y):
 
 
 def simplify_objects(obj):
-    if isinstance(obj, np.bool_):
-        return int(obj)
-    elif isinstance(obj, np.int64):
+    if isinstance(obj, (np.bool_, np.int64)):
         return int(obj)
     elif isinstance(obj, tuple) and ('_asdict' in dir(obj)):
         # looks like a namedtuple
