@@ -17,16 +17,20 @@ import os
 
 boolean = lambda b: b.lower() in ['true', '1']
 
-HTTP_PORT =          os.getenv('LPW_HTTP_PORT', 8080)
-RABBIT_HOST =        os.getenv('LPW_RABBIT_HOST')
-RABBIT_PORT =        int(os.getenv('LPW_RABBIT_PORT', '5672'))
-RABBIT_QUEUE =       os.getenv('LPW_RABBIT_QUEUE')
-RABBIT_EXCHANGE =    os.getenv('LPW_RABBIT_EXCHANGE')
-RABBIT_SSL =         boolean(os.getenv('LPW_RABBIT_SSL', 'False'))
-TILE_SPEC_HOST =     os.getenv('LPW_TILE_SPEC_HOST')
-TILE_SPEC_PORT =     int(os.getenv('LPW_TILE_SPEC_PORT', '80'))
-LOG_LEVEL =          os.getenv('LPW_LOG_LEVEL', 'INFO')
-QA_BIT_PACKED =      os.getenv('LPW_QA_BIT_PACKED', 'True')
+HTTP_PORT =             os.getenv('LPW_HTTP_PORT', 8080)
+RABBIT_HOST =           os.getenv('LPW_RABBIT_HOST')
+RABBIT_PORT =           int(os.getenv('LPW_RABBIT_PORT', '5672'))
+RABBIT_QUEUE =          os.getenv('LPW_RABBIT_QUEUE')
+RABBIT_EXCHANGE =       os.getenv('LPW_RABBIT_EXCHANGE')
+RABBIT_SSL =            boolean(os.getenv('LPW_RABBIT_SSL', 'False'))
+TILE_SPEC_HOST =        os.getenv('LPW_TILE_SPEC_HOST')
+TILE_SPEC_PORT =        int(os.getenv('LPW_TILE_SPEC_PORT', '80'))
+LOG_LEVEL =             os.getenv('LPW_LOG_LEVEL', 'INFO')
+QA_BIT_PACKED =         os.getenv('LPW_QA_BIT_PACKED', 'True')
+RABBIT_CONN_ATT =       int(os.getenv('LPW_RABBIT_CONN_ATT', 3))
+RABBIT_RETRY_DELAY =    float(os.getenv('LPW_RABBIT_RETRY_DELAY', 5))
+RABBIT_SOCKET_TIMEOUT = float(os.getenv('LPW_RABBIT_SOCKET_TIMEOUT', 10))
+
 
 RESULT_ROUTING_KEY = ccd_alg_version
 
