@@ -27,7 +27,15 @@ def send(message, channel, exchange, routing_key):
 def open_connection(host, port, ssl=False):
     try:
         return pika.BlockingConnection(
-            pika.ConnectionParameters(host=host, port=port, ssl=ssl))
+            pika.ConnectionParameters(host=host,
+                                      port=port,
+                                      ssl=ssl,
+                                      connection_attempts=3,
+                                      retry_delay=5,
+                                      socket_timeout=10
+                                      )
+        )
+        # blocked_connection_timeout only available in Master, not officially released
     except Exception as e:
         raise MessagingException("problem establishing rabbitmq connection: {}".format(e))
 
