@@ -10,7 +10,7 @@ from datetime import datetime
 import pw
 
 from merlin.support import chip_spec_queries
-from merlin.timeseries import pyccd as pyccd_rods
+from merlin import create as pyccd_create
 
 from merlin.chips import get as chips_fn
 from merlin.chip_specs import get as specs_fn
@@ -66,7 +66,13 @@ def run(msg):
         raise Exception("input for worker.run missing expected key values: {}".format(e))
 
     queries = chip_spec_queries(specs_url)
-    rods = pyccd_rods((chip_x, chip_y), specs_url, specs_fn, chips_url, chips_fn, dates, queries)
+    rods = pyccd_create(point=(chip_x, chip_y),
+                        chips_url=chips_url,
+                        acquired=dates,
+                        queries=queries,
+                        chips_fn=chips_fn,
+                        specs_fn=specs_fn,
+                        dates_fn=dates_fn)
     alg  = ccd.version.__algorithm__
 
     json_dumps      = json.dumps

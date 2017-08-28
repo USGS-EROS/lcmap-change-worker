@@ -3,19 +3,24 @@ from test import shared
 import json
 
 from merlin.support import aardvark, chip_spec_queries, data_config
-from merlin.timeseries import pyccd as pyccd_rods
+from merlin import create as pyccd_create
 
 
 def get_rods(chip, specs_url, specs_fn, chips_url, chips_fn, dates, queries):
     dc       = data_config()
     point    = (dc['x'], dc['y'])
-    specurl  = 'http://localhost'
     chipurl  = 'http://localhost'
     specs_fn = aardvark.chip_specs
     chips_fn = aardvark.chips
     acquired = dc['acquired']
     queries  = chip_spec_queries(chipurl)
-    return pyccd_rods(point, specurl, specs_fn, chipurl, chips_fn, acquired, queries)[:1]
+    return pyccd_create(point=point,
+                        chips_url=chipurl,
+                        acquired=acquired,
+                        queries=queries,
+                        chips_fn=chips_fn,
+                        specs_fn=specs_fn,
+                        dates_fn=dates_fn)[:1]
 
 
 def test_dtstr_to_ordinal():
