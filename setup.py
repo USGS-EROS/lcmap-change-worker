@@ -59,7 +59,7 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.5'
     ],
 
@@ -81,7 +81,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['pika>=0.10.0',
                       'requests>=2.12.4',
-                      'lcmap-pyccd=={}'.format(__version__),
+                      'lcmap-pyccd=={}'.format(__pyccd_version__),
                       'xarray==0.9.1',
                       'pandas==0.19.2',
                       'numpy==1.12.0',
