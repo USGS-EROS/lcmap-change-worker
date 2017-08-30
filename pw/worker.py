@@ -151,9 +151,7 @@ def detect(rainbow, x, y):
 
 
 def simplify_objects(obj):
-    if isinstance(obj, np.bool_):
-        return bool(obj)
-    elif isinstance(obj, np.int64):
+    if isinstance(obj, (np.bool_, np.int64)):
         return int(obj)
     elif isinstance(obj, tuple) and ('_asdict' in dir(obj)):
         # looks like a namedtuple
@@ -215,7 +213,7 @@ def run(msg, dimrng=100):
                 results = detect(rbow, x, y)
                 _detect_dur = datetime.now() - _detect_start
                 pw.logger.debug("detect results for x, y: {}, {} took {} seconds to generate".format(xx, yy, _detect_dur.total_seconds()))
-                outgoing['result'] = json.dumps(simplify_detect_results(results))
+                outgoing['result'] = json.dumps(simplify_detect_results(results), separators=(',', ':'))
                 outgoing['result_ok'] = True
             except Exception as e:
                 # using e.args since detect() is a wrapper for ccd.detect(), leaving the returned exception unclear
