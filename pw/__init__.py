@@ -29,7 +29,8 @@ LOG_LEVEL =             os.getenv('LPW_LOG_LEVEL', 'INFO')
 QA_BIT_PACKED =         os.getenv('LPW_QA_BIT_PACKED', 'True')
 RABBIT_CONN_ATT =       int(os.getenv('LPW_RABBIT_CONN_ATT', 3))
 RABBIT_RETRY_DELAY =    float(os.getenv('LPW_RABBIT_RETRY_DELAY', 5))
-RABBIT_SOCKET_TIMEOUT = float(os.getenv('LPW_RABBIT_SOCKET_TIMEOUT', 10))
+RABBIT_SOCKET_TIMEOUT = float(os.getenv('LPW_RABBIT_SOCKET_TIMEOUT', 20))
+RABBIT_HEARTBEAT =      int(os.getenv('LPW_RABBIT_HEARTBEAT', 10))
 
 
 RESULT_ROUTING_KEY = ccd_alg_version

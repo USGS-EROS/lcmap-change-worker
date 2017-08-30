@@ -24,7 +24,7 @@ def send(message, channel, exchange, routing_key):
                                  ))
 
 
-def open_connection(host, port, ssl, connection_attempts, retry_delay, socket_timeout):
+def open_connection(host, port, ssl, connection_attempts, retry_delay, socket_timeout, heartbeat_interval):
     try:
         return pika.BlockingConnection(
             pika.ConnectionParameters(host=host,
@@ -32,7 +32,8 @@ def open_connection(host, port, ssl, connection_attempts, retry_delay, socket_ti
                                       ssl=ssl,
                                       connection_attempts=connection_attempts,
                                       retry_delay=retry_delay,
-                                      socket_timeout=socket_timeout)
+                                      socket_timeout=socket_timeout,
+                                      heartbeat_interval=heartbeat_interval)
         )
         # blocked_connection_timeout for ConnectionParameters only available in master, not officially released
     except Exception as e:
